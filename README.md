@@ -17,7 +17,7 @@ Site: https://robertjan83.github.io/donutpot/
 - Alle ingelogde spelers kunnen elkaars score en openstaande bedragen bekijken.
 - Alleen de eigenaar kan zijn eigen donut toevoegen of van openstaand naar betaald veranderen.
 - Betalen via Tikkie is extern en wordt **niet** automatisch bevestigd. Markeer donuts als betaald **nadat** de Tikkie-betaling daadwerkelijk gelukt is.
-- Tikkie-link: https://tikkie.me/pay/ru882kg7dttrk6apvhaj ; controleer bij meerdere donuts dat het ingevoerde betaalbedrag overeenkomt met €1 per openstaande donut.
+- Tikkie-link geldig t/m 2 november 2026: https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90 ; controleer bij meerdere donuts dat het ingevoerde betaalbedrag overeenkomt met €1 per openstaande donut.
 - `donutpot` is slechts een publieke client-side toegangspoort, geen sterke beveiliging. De echte bescherming gebeurt door Firebase Auth en Firestore-rules.
 - Firebase-config bevat publieke webinstellingen, geen service-account credentials.
 
