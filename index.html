@@ -20,7 +20,7 @@ import {getFirestore,collection,doc,setDoc,getDoc,onSnapshot,addDoc,updateDoc,se
 const app=initializeApp({apiKey:"AIzaSyBiLwy_7E4CyXNNBJaJnxy69VPxd10Hpto",authDomain:"donutpot-b1863.firebaseapp.com",projectId:"donutpot-b1863",storageBucket:"donutpot-b1863.firebasestorage.app",messagingSenderId:"290581669700",appId:"1:290581669700:web:c850a763a9604effe79911"});
 const auth=getAuth(app),db=getFirestore(app),TIKKIE='https://tikkie.me/pay/ru882kg7dttrk6apvhaj',PASSWORD='donutpot';
 const $=id=>document.getElementById(id);
-let user=null,players=[],entries=[],registerMode=false,unsubs=[],pendingAction=null;
+let user=null,players=[],entries=[],registerMode=false,registrationInProgress=false,unsubs=[];
 const show=id=>$(id).classList.remove('hidden'),hide=id=>$(id).classList.add('hidden');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const date=v=>v?.toDate?.()?.toLocaleString('nl-NL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})||'Zojuist';
@@ -45,12 +45,12 @@ $('authToggle').onclick=()=>authModal(!registerMode);
 $('accountForm').onsubmit=async e=>{
 e.preventDefault();const b=$('authSubmit');b.disabled=true;$('accountError').textContent='';
 try{const email=$('email').value.trim(),password=$('authPass').value;
-if(registerMode){const name=$('nickname').value.trim().replace(/\s+/g,' ');if(name.length<2||name.length>24)throw Error('Gamertag moet 2–24 tekens bevatten.');
+if(registerMode){registrationInProgress=true;const name=$('nickname').value.trim().replace(/\s+/g,' ');if(name.length<2||name.length>24)throw Error('Gamertag moet 2–24 tekens bevatten.');
 const result=await createUserWithEmailAndPassword(auth,email,password);
 await setDoc(doc(db,'players',result.user.uid),{name,createdAt:serverTimestamp()});
 }else await signInWithEmailAndPassword(auth,email,password);
 $('authPass').value='';hide('register');
-}catch(err){$('accountError').textContent=friendly(err);}finally{b.disabled=false;}
+}catch(err){$('accountError').textContent=friendly(err);}finally{registrationInProgress=false;b.disabled=false;}
 };
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));
 $('addBtn').onclick=()=>{if(!user){authModal(false);return;}if(!me()){alert('Er is nog geen gamertag gevonden. Probeer opnieuw in te loggen.');return;}show('donutModal');};
@@ -70,7 +70,7 @@ onAuthStateChanged(auth,async u=>{
 unsubs.forEach(fn=>fn());unsubs=[];user=u;players=[];entries=[];render();
 if(!u)return;
 const profile=await getDoc(doc(db,'players',u.uid)).catch(()=>null);
-if(profile&&!profile.exists()){const name=prompt('Kies je gamertag (2–24 tekens):','Operator');if(name&&name.trim().length>=2&&name.trim().length<=24){try{await setDoc(doc(db,'players',u.uid),{name:name.trim(),createdAt:serverTimestamp()});}catch(e){alert(friendly(e));}}}
+if(profile&&!profile.exists()&&!registrationInProgress){const name=prompt('Kies je gamertag (2–24 tekens):','Operator');if(name&&name.trim().length>=2&&name.trim().length<=24){try{await setDoc(doc(db,'players',u.uid),{name:name.trim(),createdAt:serverTimestamp()});}catch(e){alert(friendly(e));}}}
 unsubs.push(onSnapshot(collection(db,'players'),snap=>{players=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 unsubs.push(onSnapshot(collection(db,'donuts'),snap=>{entries=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 });
