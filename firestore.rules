@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function keysOnly(fields) { return request.resource.data.keys().hasOnly(fields) && request.resource.data.keys().hasAll(fields); }
+    match /players/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid
+        && keysOnly(['name', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 24
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 24;
+      allow delete: if false;
+    }
+    match /donuts/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && keysOnly(['owner', 'paid', 'createdAt'])
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.paid == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && resource.data.owner == request.auth.uid
+        && resource.data.paid == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid'])
+        && request.resource.data.paid == true;
+      allow delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
