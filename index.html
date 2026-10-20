@@ -49,6 +49,8 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 .payment-actions .pay-link{background:linear-gradient(125deg,#ff4b91,#ff8c47);color:#21121a}.payment-actions .paid-confirm{background:#274438;border:1px solid #78cd9f;color:#fff}
 .payment-actions small{font-size:.75rem;font-weight:600;opacity:.88}.payment-note{grid-column:1/-1;margin:0;color:#c7b6c7;font-size:.83rem;line-height:1.55}.payment-message{margin:12px 0 0;color:#a3edc1;font-size:.87rem}.payment-message:empty{display:none}.tikkie-expiry{margin:12px 0 0;color:#b9a7b8;font-size:.78rem}@media(max-width:540px){.payment-actions{grid-template-columns:1fr}}
 .discount-breakdown{margin:13px 0 0;font-size:.91rem;line-height:1.55;font-weight:650;color:#ffabd0}
+
+.activity-paid-count{display:block;color:#a5e6c5;font-size:.8rem;font-weight:750;margin-top:5px;line-height:1.4}
 </style></head><body>
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
@@ -108,7 +110,24 @@ $('discountBreakdown').textContent=due+' donuts × € 1,00 · Nog '+(5-due)+' d
 $('paymentMessage').textContent=user&&!due?'✅ Alles afgelost! Je donutschuld is € 0,00.':'';
 const ordered=[...players].sort((a,b)=>entries.filter(e=>e.owner===b.id).length-entries.filter(e=>e.owner===a.id).length);
 $('leaderboard').innerHTML=ordered.length?ordered.map((p,i)=>{const matches=entries.filter(e=>e.owner===p.id),open=matches.filter(e=>!e.paid).length;return '<div class="line"><div class="rank">'+(i+1)+'</div><div class="avatar">'+esc(p.name[0]?.toUpperCase()||'?')+'</div><div class="who"><strong>'+esc(p.name)+'</strong><small>'+matches.length+' donuts totaal</small></div><div class="amount">'+matches.length+' 🍩<small>'+euros(owedCents(open))+' open'+(discountPct(open)?' · '+discountPct(open)+'% korting':'')+'</small></div></div>';}).join(''):'<p class="muted">Nog geen spelers.</p>';
-$('activity').innerHTML=entries.length?[...entries].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,7).map(e=>'<div class="line"><div class="avatar">🍩</div><div class="who"><strong>'+esc(players.find(p=>p.id===e.owner)?.name||'Operator')+'</strong><small>'+date(e.createdAt)+'</small></div><div class="amount status">'+(e.paid?'BETAALD ✓':'€ 1 OPEN')+'</div></div>').join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
+// Tel alle daadwerkelijk als betaald gemarkeerde donuts per speler.
+// Dit is een cumulatief totaal, niet het aantal donuts van één betaling.
+const paidTotalsByUser=new Map();
+for(const item of entries){
+  if(item.paid)paidTotalsByUser.set(item.owner,(paidTotalsByUser.get(item.owner)||0)+1);
+}
+$('activity').innerHTML=entries.length?[...entries]
+  .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))
+  .slice(0,7)
+  .map(e=>{
+    const paidCount=paidTotalsByUser.get(e.owner)||0;
+    const paidLabel=paidCount+' donut'+(paidCount===1?'':'s')+' betaald in totaal';
+    return '<div class="line"><div class="avatar">🍩</div><div class="who"><strong>'+
+      esc(players.find(p=>p.id===e.owner)?.name||'Operator')+
+      '</strong><small>'+date(e.createdAt)+'</small><small class="activity-paid-count">✓ '+
+      paidLabel+'</small></div><div class="amount status">'+
+      (e.paid?'BETAALD ✓':'€ 1 OPEN')+'</div></div>';
+  }).join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
 }
 function authModal(mode=false){registerMode=mode;$('authTitle').textContent=mode?'ACCOUNT MAKEN':'SPELER INLOGGEN';$('authSubmit').textContent=mode?'ACCOUNT AANMAKEN ↗':'INLOGGEN ↗';$('authToggle').textContent=mode?'IK HEB AL EEN ACCOUNT':'NIEUW ACCOUNT MAKEN';$('nameArea').classList.toggle('hidden',!mode);$('nickname').required=mode;$('accountError').textContent='';show('register');}
 $('gateForm').onsubmit=e=>{e.preventDefault();if($('secret').value===PASSWORD){sessionStorage.setItem('donutops-gate','yes');hide('gate');show('app');render();}else{$('gateError').textContent='Onjuist wachtwoord';$('secret').value='';}};
