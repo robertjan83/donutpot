@@ -11,41 +11,68 @@
 <div class="balance"><strong>💸 MIJN DONUTSCHULD</strong><p class="muted" id="myBalance" style="margin:12px 0">Maak een account om je donuts bij te houden.</p><div class="buttons" style="margin:0"><button id="settleBtn" class="secondary mini hidden">✓ MIJN OPENSTAANDE DONUTS ZIJN BETAALD</button><a id="settleLink" href="https://tikkie.me/pay/ru882kg7dttrk6apvhaj" target="_blank" rel="noopener noreferrer" class="hidden"><button class="mini">BETAAL OPENSTAAND VIA TIKKIE ↗</button></a></div></div>
 <div class="columns"><section class="panel"><p class="eyebrow">// HALL OF SHAME</p><h2>🍩 DONUT RANGLIJST</h2><div id="leaderboard"></div></section><section class="panel"><p class="eyebrow">// LATEST CASUALTIES</p><h2>RECENTE DONUTS</h2><div id="activity"></div></section></div>
 <footer class="footerline"><span>Onofficiële fanwebsite, niet verbonden aan Activision of Call of Duty.</span><span>ZERO KILLS. NO EXCUSES. 🍩</span></footer></div>
-<div class="overlay hidden" id="register"><form class="modal" id="accountForm"><p class="eyebrow">// PLAYER SELECT</p><h2>KIES JE GAMERTAG</h2><p class="muted">Maak een speler aan of kies op dit apparaat een bestaande naam.</p><label for="nickname">GAMERTAG</label><input id="nickname" maxlength="24" minlength="2" required placeholder="Bijv. CaptainDonut"><p class="error" id="accountError"></p><button>VERDER ↗</button><button class="secondary" type="button" data-close="register">ANNULEREN</button><p class="hint">Demomodus: accounts en scores zijn uitsluitend zichtbaar op dit apparaat. Voor een gedeelde squad is een database nodig.</p></form></div>
+<div class="overlay hidden" id="register"><form class="modal" id="accountForm"><p class="eyebrow">// FIREBASE SQUAD LOGIN</p><h2 id="authTitle">SPELER INLOGGEN</h2><p class="muted">Log in met je e-mailadres en wachtwoord, of maak een account aan.</p><label for="email">E-MAIL</label><input type="email" id="email" autocomplete="email" required placeholder="jij@voorbeeld.nl"><label for="authPass">WACHTWOORD</label><input type="password" id="authPass" autocomplete="current-password" minlength="6" required placeholder="Minstens 6 tekens"><div id="nameArea" class="hidden"><label for="nickname">GAMERTAG</label><input id="nickname" maxlength="24" minlength="2" placeholder="Bijv. CaptainDonut"></div><p class="error" id="accountError"></p><button id="authSubmit">INLOGGEN ↗</button><button class="secondary" type="button" id="authToggle">NIEUW ACCOUNT MAKEN</button><button class="secondary" type="button" data-close="register">ANNULEREN</button><p class="hint">Accounts worden veilig opgeslagen via Firebase Authentication.</p></form></div>
 <div class="overlay hidden" id="donutModal"><div class="modal"><div style="font-size:3.4rem;text-align:center">🍩</div><p class="eyebrow">ZERO KILLS CONFIRMED</p><h2>OOPS. EEN DONUT!</h2><p class="muted">Je registreert 1 donut van € 1. Wat wil je doen?</p><button id="laterBtn">🍩 TOEVOEGEN · LATER BETALEN</button><button class="secondary" id="nowBtn">🍩 TOEVOEGEN · DIRECT TIKKIE ↗</button><button class="secondary" data-close="donutModal">ANNULEREN</button><p class="hint">Een directe Tikkie-keuze markeert de donut nog niet automatisch als betaald.</p></div></div>
-<script>
-(function(){
-'use strict';
-const PASSWORD='donutpot',TIKKIE='https://tikkie.me/pay/ru882kg7dttrk6apvhaj',KEY='donutops-demo-v2';
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {getFirestore,collection,doc,setDoc,getDoc,onSnapshot,addDoc,updateDoc,serverTimestamp,writeBatch} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+const app=initializeApp({apiKey:"AIzaSyBiLwy_7E4CyXNNBJaJnxy69VPxd10Hpto",authDomain:"donutpot-b1863.firebaseapp.com",projectId:"donutpot-b1863",storageBucket:"donutpot-b1863.firebasestorage.app",messagingSenderId:"290581669700",appId:"1:290581669700:web:c850a763a9604effe79911"});
+const auth=getAuth(app),db=getFirestore(app),TIKKIE='https://tikkie.me/pay/ru882kg7dttrk6apvhaj',PASSWORD='donutpot';
 const $=id=>document.getElementById(id);
-let state;
-try{state=JSON.parse(localStorage.getItem(KEY))||{players:[],entries:[],current:null};}catch(e){state={players:[],entries:[],current:null};}
-function save(){localStorage.setItem(KEY,JSON.stringify(state));render();}
-function show(id){$(id).classList.remove('hidden');}function hide(id){$(id).classList.add('hidden');}
-function player(){return state.players.find(p=>p.id===state.current);}
-function escape(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','&#39;':'&#39;'}[c]));}
-function date(s){return new Date(s).toLocaleString('nl-NL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
-function openPayment(){const tab=window.open(TIKKIE,'_blank','noopener,noreferrer');if(!tab){location.href=TIKKIE;}}
+let user=null,players=[],entries=[],registerMode=false,unsubs=[],pendingAction=null;
+const show=id=>$(id).classList.remove('hidden'),hide=id=>$(id).classList.add('hidden');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+const date=v=>v?.toDate?.()?.toLocaleString('nl-NL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})||'Zojuist';
+function friendly(e){let c=e?.code||'';return ({'auth/email-already-in-use':'Dit e-mailadres is al geregistreerd. Kies inloggen.','auth/invalid-email':'Ongeldig e-mailadres.','auth/weak-password':'Kies een sterker wachtwoord.','auth/invalid-credential':'E-mailadres of wachtwoord is onjuist.','permission-denied':'Geen toegang tot Firestore. Controleer of de beveiligingsregels gepubliceerd zijn.','auth/operation-not-allowed':'Schakel Email/Password in onder Firebase Authentication.'})[c]||e?.message||'Er ging iets mis.';}
+const me=()=>players.find(p=>p.id===user?.uid);
 function render(){
-const due=state.entries.filter(e=>!e.paid),me=player(),mine=state.entries.filter(e=>e.userId===me?.id),unpaid=mine.filter(e=>!e.paid).length;
-$('total').textContent='€ '+state.entries.length;$('open').textContent='€ '+due.length;$('counts').textContent=state.entries.length+' · '+state.players.length;
-$('userBtn').textContent=me?'👤 '+me.name+' · WISSEL':'ACCOUNT MAKEN';
-$('myBalance').textContent=me?me.name+': '+mine.length+' donut(s) totaal · € '+unpaid+' openstaand ('+unpaid+' onbetaalde donut(s))':'Maak een account om je donuts bij te houden.';
-$('settleBtn').classList.toggle('hidden',!me||!unpaid);$('settleLink').classList.toggle('hidden',!me||!unpaid);
-const sorted=[...state.players].sort((a,b)=>state.entries.filter(e=>e.userId===b.id).length-state.entries.filter(e=>e.userId===a.id).length);
-$('leaderboard').innerHTML=sorted.length?sorted.map((p,i)=>{const entries=state.entries.filter(e=>e.userId===p.id);const open=entries.filter(e=>!e.paid).length;return '<div class="line"><div class="rank">'+(i+1)+'</div><div class="avatar">'+escape(p.name[0].toUpperCase())+'</div><div class="who"><strong>'+escape(p.name)+'</strong><small>'+entries.length+' donuts totaal</small></div><div class="amount">'+entries.length+' 🍩<small>€ '+open+' open</small></div></div>';}).join(''):'<p class="muted">Nog geen spelers.</p>';
-$('activity').innerHTML=state.entries.length?[...state.entries].reverse().slice(0,7).map(e=>{const p=state.players.find(p=>p.id===e.userId);return '<div class="line"><div class="avatar">🍩</div><div class="who"><strong>'+escape(p?.name||'Operator')+'</strong><small>'+date(e.createdAt)+'</small></div><div class="amount status">'+(e.paid?'BETAALD ✓':'€ 1 OPEN')+'</div></div>';}).join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
+const unpaid=entries.filter(e=>!e.paid),mine=entries.filter(e=>e.owner===user?.uid),due=mine.filter(e=>!e.paid).length;
+$('total').textContent='€ '+entries.length;$('open').textContent='€ '+unpaid.length;$('counts').textContent=entries.length+' · '+players.length;
+$('userBtn').textContent=user?'👤 '+(me()?.name||user.email)+' · UITLOGGEN':'ACCOUNT MAKEN';
+$('myBalance').textContent=user?(me()?.name||'Jij')+': '+mine.length+' donut(s) totaal · € '+due+' openstaand ('+due+' onbetaalde donut(s))':'Log in om je eigen donuts te registreren.';
+$('settleBtn').classList.toggle('hidden',!user||!due);$('settleLink').classList.toggle('hidden',!user||!due);
+const ordered=[...players].sort((a,b)=>entries.filter(e=>e.owner===b.id).length-entries.filter(e=>e.owner===a.id).length);
+$('leaderboard').innerHTML=ordered.length?ordered.map((p,i)=>{const matches=entries.filter(e=>e.owner===p.id),open=matches.filter(e=>!e.paid).length;return '<div class="line"><div class="rank">'+(i+1)+'</div><div class="avatar">'+esc(p.name[0]?.toUpperCase()||'?')+'</div><div class="who"><strong>'+esc(p.name)+'</strong><small>'+matches.length+' donuts totaal</small></div><div class="amount">'+matches.length+' 🍩<small>€ '+open+' open</small></div></div>';}).join(''):'<p class="muted">Nog geen spelers.</p>';
+$('activity').innerHTML=entries.length?[...entries].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,7).map(e=>'<div class="line"><div class="avatar">🍩</div><div class="who"><strong>'+esc(players.find(p=>p.id===e.owner)?.name||'Operator')+'</strong><small>'+date(e.createdAt)+'</small></div><div class="amount status">'+(e.paid?'BETAALD ✓':'€ 1 OPEN')+'</div></div>').join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
 }
-$('gateForm').addEventListener('submit',e=>{e.preventDefault();if($('secret').value===PASSWORD){sessionStorage.setItem('donutops-gate','yes');hide('gate');show('app');render();}else{$('gateError').textContent='Onjuist wachtwoord';$('secret').value='';}});
+function authModal(mode=false){registerMode=mode;$('authTitle').textContent=mode?'ACCOUNT MAKEN':'SPELER INLOGGEN';$('authSubmit').textContent=mode?'ACCOUNT AANMAKEN ↗':'INLOGGEN ↗';$('authToggle').textContent=mode?'IK HEB AL EEN ACCOUNT':'NIEUW ACCOUNT MAKEN';$('nameArea').classList.toggle('hidden',!mode);$('nickname').required=mode;$('accountError').textContent='';show('register');}
+$('gateForm').onsubmit=e=>{e.preventDefault();if($('secret').value===PASSWORD){sessionStorage.setItem('donutops-gate','yes');hide('gate');show('app');render();}else{$('gateError').textContent='Onjuist wachtwoord';$('secret').value='';}};
 if(sessionStorage.getItem('donutops-gate')==='yes'){hide('gate');show('app');}
 $('leaveBtn').onclick=()=>{sessionStorage.removeItem('donutops-gate');hide('app');show('gate');};
-$('userBtn').onclick=()=>{show('register');$('nickname').value=player()?.name||'';};
-$('accountForm').addEventListener('submit',e=>{e.preventDefault();const name=$('nickname').value.trim().replace(/\s+/g,' ');if(name.length<2){$('accountError').textContent='Minimaal 2 tekens';return;}let p=state.players.find(p=>p.name.toLowerCase()===name.toLowerCase());if(!p){p={id:Date.now().toString(36)+Math.random().toString(36).slice(2),name};state.players.push(p);}state.current=p.id;save();hide('register');});
+$('userBtn').onclick=async()=>{if(user){if(confirm('Uitloggen?'))await signOut(auth);}else authModal(false);};
+$('authToggle').onclick=()=>authModal(!registerMode);
+$('accountForm').onsubmit=async e=>{
+e.preventDefault();const b=$('authSubmit');b.disabled=true;$('accountError').textContent='';
+try{const email=$('email').value.trim(),password=$('authPass').value;
+if(registerMode){const name=$('nickname').value.trim().replace(/\s+/g,' ');if(name.length<2||name.length>24)throw Error('Gamertag moet 2–24 tekens bevatten.');
+const result=await createUserWithEmailAndPassword(auth,email,password);
+await setDoc(doc(db,'players',result.user.uid),{name,createdAt:serverTimestamp()});
+}else await signInWithEmailAndPassword(auth,email,password);
+$('authPass').value='';hide('register');
+}catch(err){$('accountError').textContent=friendly(err);}finally{b.disabled=false;}
+};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));
-$('addBtn').onclick=()=>{if(!player()){show('register');return;}show('donutModal');};
-function add(pay){if(!player())return;state.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),userId:state.current,paid:false,createdAt:new Date().toISOString()});save();hide('donutModal');if(pay)openPayment();}
+$('addBtn').onclick=()=>{if(!user){authModal(false);return;}if(!me()){alert('Er is nog geen gamertag gevonden. Probeer opnieuw in te loggen.');return;}show('donutModal');};
+let busy=false;
+async function add(pay){if(!user||busy)return;busy=true;let tab=null;if(pay)tab=window.open('about:blank','_blank');
+try{await addDoc(collection(db,'donuts'),{owner:user.uid,paid:false,createdAt:serverTimestamp()});hide('donutModal');if(pay){if(tab)tab.location.href=TIKKIE;else window.location.href=TIKKIE;}}
+catch(e){if(tab)tab.close();alert(friendly(e));}finally{busy=false;}}
 $('laterBtn').onclick=()=>add(false);$('nowBtn').onclick=()=>add(true);
-$('settleBtn').onclick=()=>{const me=player();if(!me)return;const amount=state.entries.filter(e=>e.userId===me.id&&!e.paid).length;if(!amount)return;if(!confirm('Heb je daadwerkelijk € '+amount+' via Tikkie betaald? Markeer '+amount+' donut(s) als betaald.'))return;state.entries.forEach(e=>{if(e.userId===me.id)e.paid=true;});save();};
+$('settleBtn').onclick=async()=>{
+if(!user)return;const open=entries.filter(e=>e.owner===user.uid&&!e.paid);if(!open.length)return;
+if(!confirm('Heb je daadwerkelijk € '+open.length+' via Tikkie betaald? Markeer '+open.length+' donut(s) als betaald.'))return;
+$('settleBtn').disabled=true;
+try{const batch=writeBatch(db);open.forEach(e=>batch.update(doc(db,'donuts',e.id),{paid:true}));await batch.commit();}
+catch(e){alert(friendly(e));}finally{$('settleBtn').disabled=false;}
+};
+onAuthStateChanged(auth,async u=>{
+unsubs.forEach(fn=>fn());unsubs=[];user=u;players=[];entries=[];render();
+if(!u)return;
+const profile=await getDoc(doc(db,'players',u.uid)).catch(()=>null);
+if(profile&&!profile.exists()){const name=prompt('Kies je gamertag (2–24 tekens):','Operator');if(name&&name.trim().length>=2&&name.trim().length<=24){try{await setDoc(doc(db,'players',u.uid),{name:name.trim(),createdAt:serverTimestamp()});}catch(e){alert(friendly(e));}}}
+unsubs.push(onSnapshot(collection(db,'players'),snap=>{players=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
+unsubs.push(onSnapshot(collection(db,'donuts'),snap=>{entries=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
+});
 render();
-})();
 </script></body></html>
