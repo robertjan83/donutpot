@@ -408,6 +408,7 @@ $('adminPlayers').addEventListener('click',async event=>{
       await updateDoc(doc(db,'players',uid),{customDiscount:deleteField()});
     }
     adminSetStatus('✓ '+player.name+': correctie opgeslagen in Firebase.');
+    if(isAdmin())renderAdmin();
   }catch(e){
     adminSetStatus('Opslaan mislukt: '+friendly(e),true);
   }finally{adminBusy=false;button.disabled=false;}
