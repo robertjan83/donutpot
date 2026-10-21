@@ -1,86 +1,76 @@
-/* DONUT OPS — synthetic lip-smacking effect (no sound assets or external requests) */
+/* DONUT OPS — cartoon voice recorded by the site owner */
 (function () {
   'use strict';
-
   const STORAGE_KEY = 'donutops-sound-enabled';
+  const SOUND_URL = './sounds/donut-cartoon.mp3';
   let enabled = true;
   try { enabled = localStorage.getItem(STORAGE_KEY) !== 'false'; } catch (_) {}
+
   let context = null;
-  let noiseBuffer = null;
+  let soundBuffer = null;
+  let loading = null;
 
-  function audioContext() {
+  function getContext() {
     if (!enabled) return null;
-    const AudioEngine = window.AudioContext || window.webkitAudioContext;
-    if (!AudioEngine) return null;
-
     try {
+      const AudioEngine = window.AudioContext || window.webkitAudioContext;
+      if (!AudioEngine) return null;
       if (!context) context = new AudioEngine();
-      if (!noiseBuffer) {
-        const sampleRate = context.sampleRate;
-        noiseBuffer = context.createBuffer(1, Math.ceil(sampleRate * 0.5), sampleRate);
-        const data = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-      }
-      if (context.state === 'suspended') {
-        context.resume().catch(() => {});
-      }
       return context;
-    } catch (_) { return null; }
+    } catch (_) {
+      return null;
+    }
   }
 
-  // Call synchronously from the player's button tap. iOS/Safari requires this.
-  function unlock() { audioContext(); }
+  function loadSound() {
+    if (soundBuffer) return Promise.resolve(soundBuffer);
+    if (loading) return loading;
+    const ctx = getContext();
+    if (!ctx) return Promise.resolve(null);
+    loading = fetch(SOUND_URL, {cache: 'force-cache'})
+      .then(response => {
+        if (!response.ok) throw new Error('Unable to load cartoon sound');
+        return response.arrayBuffer();
+      })
+      .then(bytes => ctx.decodeAudioData(bytes))
+      .then(decoded => { soundBuffer = decoded; return decoded; })
+      .catch(error => {
+        loading = null;
+        console.warn('DONUT OPS: geluid kan niet worden geladen', error);
+        return null;
+      });
+    return loading;
+  }
+
+  // Always called directly on the player's tap, before Firestore's async write.
+  // This unlocks playback for iOS, Android, and installed PWAs.
+  function unlock() {
+    const ctx = getContext();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    loadSound();
+  }
 
   function play() {
     if (!enabled) return;
-    const ctx = audioContext();
-    if (!ctx || !noiseBuffer) return;
-
-    try {
-      const master = ctx.createGain();
-      master.gain.value = 0.24;
-      master.connect(ctx.destination);
-
-      [0, 0.17, 0.34].forEach((offset, index) => {
-        const time = ctx.currentTime + 0.03 + offset;
-        const length = index === 2 ? 0.12 : 0.09;
-        const intensity = [0.7, 1, 0.65][index];
-
-        // A soft wet click, shaped from filtered white noise.
-        const noise = ctx.createBufferSource();
-        noise.buffer = noiseBuffer;
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.Q.value = 0.9;
-        filter.frequency.setValueAtTime(1550, time);
-        filter.frequency.exponentialRampToValueAtTime(550, time + length);
-        const envelope = ctx.createGain();
-        envelope.gain.setValueAtTime(0.0001, time);
-        envelope.gain.exponentialRampToValueAtTime(intensity, time + 0.007);
-        envelope.gain.exponentialRampToValueAtTime(0.0001, time + length);
-        noise.connect(filter);
-        filter.connect(envelope);
-        envelope.connect(master);
-        noise.start(time);
-        noise.stop(time + length + 0.004);
-
-        // A small descending mouth-pop to make it sound like a smack.
-        const pop = ctx.createOscillator();
-        const popGain = ctx.createGain();
-        pop.type = 'sine';
-        pop.frequency.setValueAtTime(190, time);
-        pop.frequency.exponentialRampToValueAtTime(85, time + 0.065);
-        popGain.gain.setValueAtTime(0.0001, time);
-        popGain.gain.exponentialRampToValueAtTime(0.34 * intensity, time + 0.006);
-        popGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.07);
-        pop.connect(popGain);
-        popGain.connect(master);
-        pop.start(time);
-        pop.stop(time + 0.075);
-      });
-    } catch (error) { console.debug('DONUT OPS: sound unavailable', error); }
+    const ctx = getContext();
+    if (!ctx) return;
+    const playBuffer = buffer => {
+      if (!enabled || !buffer) return;
+      try {
+        const voice = ctx.createBufferSource();
+        voice.buffer = buffer;
+        const volume = ctx.createGain();
+        volume.gain.value = 0.82;
+        voice.connect(volume);
+        volume.connect(ctx.destination);
+        voice.start(0);
+      } catch (error) {
+        console.warn('DONUT OPS: afspelen is niet gelukt', error);
+      }
+    };
+    if (soundBuffer) playBuffer(soundBuffer);
+    else loadSound().then(playBuffer);
   }
 
   function renderButton() {
@@ -92,7 +82,6 @@
   }
 
   window.DonutSound = { unlock, play };
-
   const soundButton = document.getElementById('soundBtn');
   if (soundButton) {
     renderButton();
@@ -100,7 +89,11 @@
       enabled = !enabled;
       try { localStorage.setItem(STORAGE_KEY, String(enabled)); } catch (_) {}
       renderButton();
-      if (enabled) { unlock(); play(); }
+      if (enabled) {
+        unlock();
+        play();
+      }
     });
   }
+  if (enabled) loadSound();
 })();
