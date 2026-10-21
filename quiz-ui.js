@@ -42,7 +42,7 @@ export function installQuiz(auth,db){
     if(timeLeft<=30*60*1000){
       s+='<div class="quiz-ready" aria-live="off"><span class="quiz-ready-tag">🎮 GET READY, SQUAD!</span><h3>Nieuwe quizvraag binnen 30 minuten!</h3><p>⏱️ Nog <strong>'+untilLabel(round.startMs)+'</strong> · De eerste met het goede antwoord wint 20% korting.</p><div class="quiz-ready-track"><div style="width:'+Math.max(0,Math.min(100,(30*60*1000-timeLeft)/(30*60*1000)*100))+'%"></div></div></div>';
     }else{
-      s+='<p class="quiz-wait">⏳ De volgende vraag komt op een willekeurig moment tussen 08:30–12:00 of 19:00–22:00. Vanaf 30 minuten ervoor start de Get Ready-aftelling!</p>';
+      s+='<p class="quiz-wait">Er is nu geen vraag beschikbaar.</p>';
     }
    }
    else{
