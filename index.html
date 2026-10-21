@@ -54,7 +54,7 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 </style></head><body>
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
-<header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Verlaat squad">⇥</button></div></header>
+<header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
 <section class="hero"><div><p class="eyebrow">// OPERATION: ZERO KILLS</p><h1>NO KILLS.<br><span>JUST DONUTS.</span></h1><p class="muted">Een Call of Duty-potje met <strong>0 kills</strong>? Registreer zelf een donut. Iedere donut kost <strong>€ 1</strong>. Betaal meteen of laat de schuld oplopen.</p><div class="buttons"><button id="addBtn" type="button" class="donut-action"><span class="donut-cta-copy"><small>0 KILLS GESPEELD?</small><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button><a class="tikkie-link" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer">BETAAL VIA TIKKIE ↗</a></div><div class="hint">Betalen gaat via Tikkie. Je markeert zelf of je betaling is gedaan.</div></div><div class="donut" aria-hidden="true">🍩</div></section>
 <div class="stats"><div class="stat"><label>TOTAAL DONUTWAARDE</label><b id="total">€ 0</b><small>Alle geregistreerde donuts</small></div><div class="stat"><label>OPENSTAAND BIJ SQUAD</label><b id="open">€ 0,00</b><small>Na de kortingen per speler</small></div><div class="stat"><label>DONUTS · SPELERS</label><b id="counts">0 · 0</b><small>Zero-kill games</small></div></div>
 <section class="balance" aria-labelledby="balanceTitle"><div class="balance-header"><div><strong id="balanceTitle">💸 MIJN DONUTSCHULD</strong><p class="muted" id="myBalance">Log in om je openstaande donuts te zien.</p></div><div id="myDue" class="balance-total">€ 0,00</div></div><p id="discountBreakdown" class="discount-breakdown" aria-live="polite"></p><div id="paymentActions" class="payment-actions hidden"><a id="settleLink" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer" class="pay-link"><span>1. BETAAL VIA TIKKIE ↗</span><small id="amountToPay">Te betalen: € 0,00</small></a><button id="settleBtn" type="button" class="paid-confirm"><span>2. IK HEB BETAALD ✓</span><small>Schuld aflossen en op € 0 zetten</small></button><p class="payment-note">Vul bij Tikkie het hierboven berekende bedrag <strong>na korting</strong> in, als Tikkie een vrij bedrag toestaat. Keer na de betaling terug en druk op <strong>Ik heb betaald</strong>. De betaling wordt niet automatisch gecontroleerd.</p></div><p id="paymentMessage" class="payment-message" role="status" aria-live="polite"></p><p class="tikkie-expiry">Tikkie geldig t/m 2 november 2026.</p></section>
@@ -130,9 +130,42 @@ $('activity').innerHTML=entries.length?[...entries]
   }).join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
 }
 function authModal(mode=false){registerMode=mode;$('authTitle').textContent=mode?'ACCOUNT MAKEN':'SPELER INLOGGEN';$('authSubmit').textContent=mode?'ACCOUNT AANMAKEN ↗':'INLOGGEN ↗';$('authToggle').textContent=mode?'IK HEB AL EEN ACCOUNT':'NIEUW ACCOUNT MAKEN';$('nameArea').classList.toggle('hidden',!mode);$('nickname').required=mode;$('accountError').textContent='';show('register');}
-$('gateForm').onsubmit=e=>{e.preventDefault();if($('secret').value===PASSWORD){sessionStorage.setItem('donutops-gate','yes');hide('gate');show('app');render();}else{$('gateError').textContent='Onjuist wachtwoord';$('secret').value='';}};
-if(sessionStorage.getItem('donutops-gate')==='yes'){hide('gate');show('app');}
-$('leaveBtn').onclick=()=>{sessionStorage.removeItem('donutops-gate');hide('app');show('gate');};
+// Onthoud alleen dat dit apparaat al toegang heeft; sla het wachtwoord niet op.
+const GATE_KEY='donutops-gate';
+function gateAccessGranted(){
+  try {
+    if(localStorage.getItem(GATE_KEY)==='yes')return true;
+    // Een bestaande, nog geopende sessie hoeft niet opnieuw het wachtwoord in te voeren.
+    if(sessionStorage.getItem(GATE_KEY)==='yes'){
+      localStorage.setItem(GATE_KEY,'yes');
+      return true;
+    }
+  } catch(error) {
+    try { return sessionStorage.getItem(GATE_KEY)==='yes'; } catch(_) {}
+  }
+  return false;
+}
+function rememberGateAccess(){
+  try { localStorage.setItem(GATE_KEY,'yes'); }
+  catch(error) { try { sessionStorage.setItem(GATE_KEY,'yes'); } catch(_) {} }
+}
+function forgetGateAccess(){
+  try { localStorage.removeItem(GATE_KEY); } catch(_) {}
+  try { sessionStorage.removeItem(GATE_KEY); } catch(_) {}
+}
+$('gateForm').onsubmit=e=>{
+  e.preventDefault();
+  if($('secret').value===PASSWORD){
+    rememberGateAccess();
+    $('secret').value='';
+    hide('gate');show('app');render();
+  }else{
+    $('gateError').textContent='Onjuist wachtwoord';
+    $('secret').value='';
+  }
+};
+if(gateAccessGranted()){hide('gate');show('app');}
+$('leaveBtn').onclick=()=>{forgetGateAccess();hide('app');show('gate');};
 $('userBtn').onclick=async()=>{if(user){if(confirm('Uitloggen?'))await signOut(auth);}else authModal(false);};
 $('authToggle').onclick=()=>authModal(!registerMode);
 $('accountForm').onsubmit=async e=>{
