@@ -1,8 +1,14 @@
 /* DONUT OPS: online-first shell, offline info page */
-const CACHE_NAME = 'donutops-pwa-v5';
+const CACHE_NAME = 'donutops-pwa-v6';
 const PRECACHE = ['./offline.html','./manifest.webmanifest','./pwa.js','./quiz-ui.js','./quiz-questions.js','./offer-pricing.js','./donut-sound.js','./sounds/donut-cartoon.mp3','./sounds/donut-voices.mp3','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(PRECACHE)).then(()=>self.skipWaiting()));
+  // A new worker refreshes its cached files from the network, instead of
+  // copying an older HTTP-cached version into a newer Cache Storage.
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE.map(path => new Request(path, {cache:'reload'}))))
+      .then(() => self.skipWaiting())
+  );
 });
 self.addEventListener('activate', event => {
   event.waitUntil(Promise.all([
@@ -17,6 +23,24 @@ self.addEventListener('fetch', event => {
   if(url.origin!==self.location.origin || !url.pathname.startsWith(new URL(self.registration.scope).pathname))return;
   if(request.mode==='navigate'){
     event.respondWith(fetch(request).catch(()=>caches.match(new URL('./offline.html',self.registration.scope))));
+    return;
+  }
+  // Voice clips and app scripts need fresh versions even inside an installed
+  // PWA. Fetch them online first, but retain the last cached copy for offline.
+  const mutable=/\/(?:pwa|donut-sound|quiz-ui|quiz-questions|offer-pricing)\.js$/.test(url.pathname)
+    || /\/sounds\/[^/]+\.mp3$/.test(url.pathname);
+  if(mutable){
+    event.respondWith((async () => {
+      try {
+        const response=await fetch(request,{cache:'no-cache'});
+        if(!response.ok)throw new Error('Server returned '+response.status);
+        const cache=await caches.open(CACHE_NAME);
+        await cache.put(request,response.clone());
+        return response;
+      }catch(err){
+        return (await caches.match(request,{ignoreSearch:true}))||Response.error();
+      }
+    })());
     return;
   }
   if(PRECACHE.some(path=>new URL(path,self.registration.scope).href===url.href)){

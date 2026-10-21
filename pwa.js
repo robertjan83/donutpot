@@ -13,6 +13,28 @@ const android=/Android/i.test(ua);
 const mobile=ios||android;
 const storageKey='donutops-pwa-dismissed-until';
 let deferredPrompt=null;
+let serviceWorkerRegistration=null;
+let lastUpdateCheck=0;
+function notifyNewVersion(){
+  const actions=document.querySelector('.top-buttons');
+  if(!actions || document.getElementById('pwaRefreshBtn'))return;
+  const button=document.createElement('button');
+  button.id='pwaRefreshBtn';
+  button.type='button';
+  button.className='secondary mini';
+  button.textContent='↻ Update beschikbaar';
+  button.title='Nieuwe appversie laden, inclusief de nieuwste geluiden';
+  button.addEventListener('click',()=>window.location.reload());
+  const account=document.getElementById('userBtn');
+  actions.insertBefore(button,account||null);
+}
+function checkForUpdates(force=false){
+  if(!serviceWorkerRegistration)return;
+  const now=Date.now();
+  if(!force&&now-lastUpdateCheck<5*60*1000)return;
+  lastUpdateCheck=now;
+  serviceWorkerRegistration.update().catch(err=>console.warn('PWA updatecontrole:',err));
+}
 function standalone(){return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
 function hidden(){banner.classList.add('hidden');}
 function recentlyDismissed(){try{return Number(localStorage.getItem(storageKey)||0)>Date.now();}catch(e){return false;}}
@@ -60,8 +82,19 @@ action.addEventListener('click',async()=>{
   }catch(e){guide();}
  }else{guide();}
 });
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange',notifyNewVersion);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates();});
+}
 window.addEventListener('load',()=>{
- if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(err=>console.warn('PWA service worker:',err));}
+ if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'})
+    .then(registration=>{
+      serviceWorkerRegistration=registration;
+      checkForUpdates(true);
+    })
+    .catch(err=>console.warn('PWA service worker:',err));
+ }
  if(standalone())return;
  if(mobile){
   navButton.classList.remove('hidden');

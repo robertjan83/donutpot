@@ -4,8 +4,11 @@
 
   const ENABLED_KEY = 'donutops-sound-enabled';
   const INDEX_KEY = 'donutops-sound-next-index';
-  const VOICE_URL = './sounds/donut-voices.mp3';
-  const ORIGINAL_URL = './sounds/donut-cartoon.mp3';
+  // Version the audio URLs so an already installed PWA or Android WebView
+  // cannot quietly reuse old MP3s from its HTTP cache.
+  const AUDIO_VERSION = '20261021-2';
+  const VOICE_URL = './sounds/donut-voices.mp3?v=' + AUDIO_VERSION;
+  const ORIGINAL_URL = './sounds/donut-cartoon.mp3?v=' + AUDIO_VERSION;
 
   const tracks = [
     { name: 'DONUT!', url: ORIGINAL_URL, offset: 0, duration: null },
@@ -45,7 +48,7 @@
     if (buffers.has(url)) return Promise.resolve(buffers.get(url));
     if (inFlight.has(url)) return inFlight.get(url);
 
-    const request = fetch(url, { cache: 'force-cache' })
+    const request = fetch(url, { cache: 'no-cache' })
       .then(response => {
         if (!response.ok) throw new Error('Geluid ontbreekt: ' + url);
         return response.arrayBuffer();
