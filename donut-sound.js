@@ -1,99 +1,146 @@
-/* DONUT OPS — cartoon voice recorded by the site owner */
+/* DONUT OPS — rotation of the original donut clip plus three cartoon voice recordings */
 (function () {
   'use strict';
-  const STORAGE_KEY = 'donutops-sound-enabled';
-  const SOUND_URL = './sounds/donut-cartoon.mp3';
+
+  const ENABLED_KEY = 'donutops-sound-enabled';
+  const INDEX_KEY = 'donutops-sound-next-index';
+  const VOICE_URL = './sounds/donut-voices.mp3';
+  const ORIGINAL_URL = './sounds/donut-cartoon.mp3';
+
+  const tracks = [
+    { name: 'DONUT!', url: ORIGINAL_URL, offset: 0, duration: null },
+    { name: 'D-d-d-donut', url: VOICE_URL, offset: 0, duration: 1.8733 },
+    { name: 'Jij hebt een donut', url: VOICE_URL, offset: 2.1233, duration: 1.9307 },
+    { name: 'Donizzle my shizzle', url: VOICE_URL, offset: 4.304, duration: 2.1565 }
+  ];
+
   let enabled = true;
-  try { enabled = localStorage.getItem(STORAGE_KEY) !== 'false'; } catch (_) {}
+  let nextIndex = 0;
+  try {
+    enabled = localStorage.getItem(ENABLED_KEY) !== 'false';
+    const remembered = Number(localStorage.getItem(INDEX_KEY));
+    if (Number.isInteger(remembered) && remembered >= 0)
+      nextIndex = remembered % tracks.length;
+  } catch (_) {}
 
   let context = null;
-  let soundBuffer = null;
-  let loading = null;
+  const buffers = new Map();
+  const inFlight = new Map();
 
   function getContext() {
     if (!enabled) return null;
     try {
-      const AudioEngine = window.AudioContext || window.webkitAudioContext;
-      if (!AudioEngine) return null;
-      if (!context) context = new AudioEngine();
+      const Engine = window.AudioContext || window.webkitAudioContext;
+      if (!Engine) return null;
+      if (!context) context = new Engine();
       return context;
     } catch (_) {
       return null;
     }
   }
 
-  function loadSound() {
-    if (soundBuffer) return Promise.resolve(soundBuffer);
-    if (loading) return loading;
+  function loadAudio(url) {
     const ctx = getContext();
     if (!ctx) return Promise.resolve(null);
-    loading = fetch(SOUND_URL, {cache: 'force-cache'})
+    if (buffers.has(url)) return Promise.resolve(buffers.get(url));
+    if (inFlight.has(url)) return inFlight.get(url);
+
+    const request = fetch(url, { cache: 'force-cache' })
       .then(response => {
-        if (!response.ok) throw new Error('Unable to load cartoon sound');
+        if (!response.ok) throw new Error('Geluid ontbreekt: ' + url);
         return response.arrayBuffer();
       })
       .then(bytes => ctx.decodeAudioData(bytes))
-      .then(decoded => { soundBuffer = decoded; return decoded; })
-      .catch(error => {
-        loading = null;
-        console.warn('DONUT OPS: geluid kan niet worden geladen', error);
+      .then(decoded => {
+        buffers.set(url, decoded);
+        inFlight.delete(url);
+        return decoded;
+      })
+      .catch(err => {
+        inFlight.delete(url);
+        console.warn('DONUT OPS geluid niet beschikbaar', err);
         return null;
       });
-    return loading;
+    inFlight.set(url, request);
+    return request;
   }
 
-  // Always called directly on the player's tap, before Firestore's async write.
-  // This unlocks playback for iOS, Android, and installed PWAs.
+  // Must run directly on the tap before the asynchronous Firebase write.
   function unlock() {
     const ctx = getContext();
     if (!ctx) return;
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    loadSound();
+    loadAudio(ORIGINAL_URL);
+    loadAudio(VOICE_URL);
   }
 
-  function play() {
+  function playTrack(track, advance) {
     if (!enabled) return;
     const ctx = getContext();
     if (!ctx) return;
-    const playBuffer = buffer => {
+    loadAudio(track.url).then(async buffer => {
+      // If a newer asset could not be loaded, at least play the original clip.
+      if (!buffer && track.url !== ORIGINAL_URL) {
+        buffer = await loadAudio(ORIGINAL_URL);
+        track = tracks[0];
+      }
       if (!enabled || !buffer) return;
       try {
-        const voice = ctx.createBufferSource();
-        voice.buffer = buffer;
+        const source = ctx.createBufferSource();
         const volume = ctx.createGain();
         volume.gain.value = 0.82;
-        voice.connect(volume);
+        source.buffer = buffer;
+        source.connect(volume);
         volume.connect(ctx.destination);
-        voice.start(0);
-      } catch (error) {
-        console.warn('DONUT OPS: afspelen is niet gelukt', error);
+        const offset = Math.min(track.offset, Math.max(0, buffer.duration - 0.02));
+        if (track.duration != null) {
+          const duration = Math.min(track.duration, buffer.duration - offset);
+          if (duration <= 0) return;
+          source.start(0, offset, duration);
+        } else {
+          source.start(0);
+        }
+        if (advance) {
+          nextIndex = (nextIndex + 1) % tracks.length;
+          try { localStorage.setItem(INDEX_KEY, String(nextIndex)); } catch (_) {}
+        }
+      } catch (err) {
+        console.warn('DONUT OPS: afspelen niet gelukt', err);
       }
-    };
-    if (soundBuffer) playBuffer(soundBuffer);
-    else loadSound().then(playBuffer);
+    });
   }
 
+  // One step of the rotation for each successfully registered donut.
+  function play() { playTrack(tracks[nextIndex], true); }
+
   function renderButton() {
-    const button = document.getElementById('soundBtn');
-    if (!button) return;
-    button.textContent = enabled ? '🔊 Geluid aan' : '🔇 Geluid uit';
-    button.setAttribute('aria-pressed', String(enabled));
-    button.setAttribute('aria-label', enabled ? 'Donutgeluid uitschakelen' : 'Donutgeluid inschakelen');
+    const btn = document.getElementById('soundBtn');
+    if (!btn) return;
+    btn.textContent = enabled ? '🔊 Geluid aan' : '🔇 Geluid uit';
+    btn.setAttribute('aria-pressed', String(enabled));
+    btn.setAttribute('aria-label', enabled ? 'Donutgeluid uitschakelen' : 'Donutgeluid inschakelen');
   }
 
   window.DonutSound = { unlock, play };
+
   const soundButton = document.getElementById('soundBtn');
   if (soundButton) {
     renderButton();
     soundButton.addEventListener('click', () => {
       enabled = !enabled;
-      try { localStorage.setItem(STORAGE_KEY, String(enabled)); } catch (_) {}
+      try { localStorage.setItem(ENABLED_KEY, String(enabled)); } catch (_) {}
       renderButton();
       if (enabled) {
         unlock();
-        play();
+        // A small preview of the next voice, without advancing the rotation.
+        playTrack(tracks[nextIndex], false);
       }
     });
   }
-  if (enabled) loadSound();
+
+  // Preload both small audio files; no sound plays automatically on page load.
+  if (enabled) {
+    loadAudio(ORIGINAL_URL);
+    loadAudio(VOICE_URL);
+  }
 })();
