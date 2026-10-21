@@ -64,13 +64,24 @@
     <button class="reset" type="button" id="reset">Nieuwe ronde ↻</button>
   </div>
   <p class="message" id="message" role="status" aria-live="polite"></p>
-  <p class="note">Hoor je een uitspraak? Tik op het vakje voor een rood kruisje. Vier op een rij = BINGO. Er zijn 18 uitspraken in de mix; elke nieuwe ronde krijgt een verse 4×4-kaart. Je kruisjes blijven op dit apparaat bewaard.</p>
+  <p class="note">Hoor je een uitspraak? Tik op het vakje voor een rood kruisje. Vier op een rij = BINGO. Er zijn 19 uitspraken in de mix. De 9 originele squad-uitspraken staan altijd op je kaart; de andere 7 vakjes wisselen per ronde. Je kruisjes blijven op dit apparaat bewaard.</p>
 </main>
 <script>
   (() => {
     'use strict';
-    // A classic 4×4 bingo board with a rotating set of 18 squad quotes.
-    // Both new quotes always appear on every card.
+    // The user's nine explicitly requested lines are always included.
+    // Seven other slots rotate between the remaining ten squad excuses.
+    const requiredPhrases = [
+      "Hij was one shot",
+      "Er kwam een hele squad",
+      "1 kogel te weinig",
+      "Ik had lag",
+      "COD timing",
+      "Hij camped hard",
+      "Die was raak",
+      "Hij gaat niet liggen",
+      "Wie nakt mijn kills"
+];
     const originals = [
       'Hij was one shot',
       'Er kwam een hele squad',
@@ -89,9 +100,10 @@
       'Ik was aan het reloaden',
       'De hitbox is kapot'
     ];
-    const newPhrases = ['Die was raak', 'Hij gaat niet liggen'];
-    const phrasePool = [...originals, ...newPhrases];
-    const storageKey = 'donutops-speaky-bingo-v2';
+    const phrasePool = [...new Set([...originals, ...requiredPhrases])];
+    const rotatingPhrases = phrasePool.filter(p => !requiredPhrases.includes(p));
+    const storageKey = 'donutops-speaky-bingo-v3';
+    const previousKey = 'donutops-speaky-bingo-v2';
     const legacyKey = 'donutops-speaky-bingo-v1';
     const board = document.getElementById('board');
     const progress = document.getElementById('progress');
@@ -111,34 +123,44 @@
       return result;
     }
     function freshCard(priority = []) {
-      const preferred = priority.filter(p => originals.includes(p));
-      const unique = [...new Set(preferred)];
-      const remainder = shuffle(originals.filter(p => !unique.includes(p)));
-      return shuffle([...newPhrases, ...unique.slice(0,14), ...remainder.slice(0,Math.max(0,14-unique.length))]);
+      // Keep all explicitly requested phrases; marked optional tiles have
+      // priority when migrating old saved bingo cards.
+      const preferred = [...new Set(priority.filter(p => rotatingPhrases.includes(p)))];
+      const optionalSlots = 16 - requiredPhrases.length;
+      const remainder = shuffle(rotatingPhrases.filter(p => !preferred.includes(p)));
+      return shuffle([...requiredPhrases, ...preferred.slice(0, optionalSlots),
+        ...remainder.slice(0, Math.max(0, optionalSlots - preferred.length))]);
     }
     function validCard(phrases) {
       return Array.isArray(phrases) && phrases.length === 16 &&
         new Set(phrases).size === 16 &&
-        newPhrases.every(p => phrases.includes(p)) &&
+        requiredPhrases.every(p => phrases.includes(p)) &&
         phrases.every(p => phrasePool.includes(p));
     }
     let phrases = freshCard();
     const marked = new Set();
     try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-      if (saved && validCard(saved.phrases) && Array.isArray(saved.marked)) {
-        phrases = saved.phrases;
-        for (const phrase of saved.marked) {
+      const stored = JSON.parse(localStorage.getItem(storageKey) || 'null');
+      if (stored && validCard(stored.phrases) && Array.isArray(stored.marked)) {
+        phrases = stored.phrases;
+        for (const phrase of stored.marked) {
           if (phrases.includes(phrase)) marked.add(phrase);
         }
       } else {
-        const previous = JSON.parse(localStorage.getItem(legacyKey) || '[]');
-        if (Array.isArray(previous)) {
-          const oldMarks = previous.filter(i => Number.isInteger(i) && i >= 0 && i < originals.length)
-            .map(i => originals[i]);
-          phrases = freshCard(oldMarks);
-          for (const phrase of oldMarks) {
-            if (phrases.includes(phrase)) marked.add(phrase);
+        // Upgrade existing cards without resetting all the player's crosses.
+        const oldCard = stored && Array.isArray(stored.phrases) ? stored :
+          JSON.parse(localStorage.getItem(previousKey) || 'null');
+        if (oldCard && Array.isArray(oldCard.phrases) && Array.isArray(oldCard.marked)) {
+          const oldMarks = oldCard.marked.filter(p => phrasePool.includes(p));
+          phrases = freshCard([...oldMarks, ...oldCard.phrases]);
+          for (const phrase of oldMarks) if (phrases.includes(phrase)) marked.add(phrase);
+        } else {
+          const oldIndices = JSON.parse(localStorage.getItem(legacyKey) || '[]');
+          if (Array.isArray(oldIndices)) {
+            const oldMarks = oldIndices.filter(i => Number.isInteger(i) && i >= 0 && i < originals.length)
+              .map(i => originals[i]);
+            phrases = freshCard(oldMarks);
+            for (const phrase of oldMarks) if (phrases.includes(phrase)) marked.add(phrase);
           }
         }
       }
