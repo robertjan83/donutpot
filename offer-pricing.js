@@ -23,12 +23,15 @@ export const offerValid=o=>o&&Number.isInteger(o.startMs)&&Number.isInteger(o.en
  o.endMs>o.startMs&&Number.isInteger(o.maxDonuts)&&o.maxDonuts>=1&&
  Number.isInteger(o.percent)&&o.percent>=0&&o.percent<=100;
 export const offerUsed=(o,entries)=>entries.filter(e=>e.owner===o.owner&&stampMs(e)>=o.startMs&&stampMs(e)<o.endMs).length;
-export function promotionRates(entries,players,offers){
- const rates=new Map(),birthdays=new Map(players.map(p=>[p.id,p.birthday]));
- for(const e of entries){const ms=stampMs(e);if(ms&&birthdayWeek(ms,birthdays.get(e.owner)))rates.set(e.id,{percent:20,kind:'verjaardag'});}
+// A promotion is valid only WHILE its date window is active. Unused slots
+// expire, and unpaid donuts lose that offer's rate once the offer ends.
+export function promotionRates(entries,players,offers,nowMs=Date.now()){
+ const rates=new Map();
+ const birthdays=new Map(players.filter(p=>birthdayWeek(nowMs,p.birthday)).map(p=>[p.id,p.birthday]));
+ for(const e of entries){const ms=stampMs(e);if(ms&&birthdays.has(e.owner)&&birthdayWeek(ms,birthdays.get(e.owner)))rates.set(e.id,{percent:20,kind:'verjaardag'});}
  const sorted=[...entries].sort((a,b)=>stampMs(a)-stampMs(b)||a.id.localeCompare(b.id));
  for(const o of offers){
-  if(!offerValid(o))continue;
+  if(!offerValid(o)||nowMs<o.startMs||nowMs>=o.endMs)continue;
   let used=0;
   for(const e of sorted){
    if(e.owner!==o.owner)continue;
@@ -42,9 +45,9 @@ export function promotionRates(entries,players,offers){
  }
  return rates;
 }
-export function calculateDebt(entries,players,offers,owner,basePercent){
+export function calculateDebt(entries,players,offers,owner,basePercent,nowMs=Date.now()){
  const outstanding=entries.filter(e=>e.owner===owner&&!e.paid);
- const rates=promotionRates(entries,players,offers);
+ const rates=promotionRates(entries,players,offers,nowMs);
  let cents=0,extra=0,birthdays=0,actions=0;
  for(const d of outstanding){
   const promo=rates.get(d.id);

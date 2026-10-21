@@ -201,7 +201,7 @@ $('activity').innerHTML=entries.length?[...entries]
       paidLabel+'</small></div><div class="amount status">'+
       (e.paid?'BETAALD ✓':'OPEN 🍩')+'</div></div>';
   }).join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
-if(isAdmin()&&!$('adminModal').classList.contains('hidden'))renderAdmin();
+if(isAdmin()&&!$('adminModal').classList.contains('hidden')&&!$('adminModal').contains(document.activeElement))renderAdmin();
 }
 function authModal(mode=false){registerMode=mode;$('authTitle').textContent=mode?'ACCOUNT MAKEN':'SPELER INLOGGEN';$('authSubmit').textContent=mode?'ACCOUNT AANMAKEN ↗':'INLOGGEN ↗';$('authToggle').textContent=mode?'IK HEB AL EEN ACCOUNT':'NIEUW ACCOUNT MAKEN';$('nameArea').classList.toggle('hidden',!mode);$('nickname').required=mode;$('accountError').textContent='';show('register');}
 // Onthoud alleen dat dit apparaat al toegang heeft; sla het wachtwoord niet op.
@@ -296,12 +296,12 @@ function renderAdmin(){
     '<label>Persoonlijke korting (%)<input class="admin-percent" type="number" inputmode="numeric" min="0" max="100" step="1" value="'+(custom?custom.percent:10)+'"></label>'+
     '<button type="button" data-action="save" data-uid="'+esc(p.id)+'">Opslaan</button>'+
     '<button type="button" data-action="reset" data-uid="'+esc(p.id)+'" class="secondary" '+(!custom?'disabled':'')+'>Standaard</button></div>'+
-    '<p class="admin-discount-note">'+esc(detail)+'</p>'+ '<div class="admin-section"><strong>🎂 Verjaardag</strong><p>20% korting in de verjaardagsweek (maandag–zondag). Alleen dag en maand worden opgeslagen.</p>'+
+    '<p class="admin-discount-note">'+esc(detail)+'</p>'+ '<div class="admin-section"><strong>🎂 Verjaardag</strong><p>20% korting in de verjaardagsweek (maandag–zondag); daarna vervalt deze korting automatisch. Alleen dag en maand worden opgeslagen.</p>'+
 '<div class="admin-discount"><label>Dag<input class="birthday-day" type="number" min="1" max="31" step="1" placeholder="Dag" value="'+(p.birthday?.day||'')+'"></label>'+
 '<label>Maand<input class="birthday-month" type="number" min="1" max="12" step="1" placeholder="Maand" value="'+(p.birthday?.month||'')+'"></label>'+
 '<button data-action="birthday-save" data-uid="'+esc(p.id)+'" type="button">Verjaardag opslaan</button>'+
 '<button data-action="birthday-clear" data-uid="'+esc(p.id)+'" type="button" class="secondary" '+(!p.birthday?'disabled':'')+'>Wissen</button></div></div>'+
-'<div class="admin-section"><strong>🎁 Tijdelijke actie</strong><p>Start direct: maximaal X donuts gedurende X dagen met X% korting. Verdiende kortingen blijven geldig na afloop.</p>'+
+'<div class="admin-section"><strong>🎁 Tijdelijke actie</strong><p>Start direct: maximaal X donuts gedurende X dagen met X% korting. Na afloop vervalt de actie automatisch, ook als er nog actiedonuts over zijn of openstaan.</p>'+
 '<div class="admin-discount"><label>Dagen<input class="offer-days" type="number" min="1" max="365" step="1" value="2"></label>'+
 '<label>Max. donuts<input class="offer-limit" type="number" min="1" max="999" step="1" value="3"></label>'+
 '<label>Korting (%)<input class="offer-percent" type="number" min="0" max="100" step="1" value="20"></label>'+
@@ -422,5 +422,9 @@ unsubs.push(onSnapshot(collection(db,'players'),snap=>{players=snap.docs.map(d=>
 unsubs.push(onSnapshot(collection(db,'donuts'),snap=>{entries=snap.docs.filter(d=>d.data().voided!==true).map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 unsubs.push(onSnapshot(collection(db,'offers'),snap=>{offers=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 });
+// Bij afloop van een actie (of verjaardagsweek) moet de schuld ook zonder
+// Firebase-activiteit opnieuw berekend worden. Ook bij terugkeer naar de PWA.
+setInterval(()=>{if(!document.hidden)render();},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
 render();
 </script></body></html>
