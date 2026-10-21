@@ -1,5 +1,5 @@
 /* DONUT OPS: online-first shell, offline info page */
-const CACHE_NAME = 'donutops-pwa-v8';
+const CACHE_NAME = 'donutops-pwa-v9';
 const PRECACHE = ['./offline.html','./manifest.webmanifest','./pwa.js','./quiz-ui.js','./push-client.js','./quiz-questions.js','./offer-pricing.js','./donut-sound.js','./sounds/donut-cartoon.mp3','./sounds/donut-voices.mp3','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
   // A new worker refreshes its cached files from the network, instead of
@@ -27,7 +27,7 @@ self.addEventListener('fetch', event => {
   }
   // Voice clips and app scripts need fresh versions even inside an installed
   // PWA. Fetch them online first, but retain the last cached copy for offline.
-  const mutable=/\/(?:pwa|donut-sound|quiz-ui|quiz-questions|offer-pricing)\.js$/.test(url.pathname)
+  const mutable=/\/(?:pwa|donut-sound|quiz-ui|quiz-questions|offer-pricing|push-client)\.js$/.test(url.pathname)
     || /\/sounds\/[^/]+\.mp3$/.test(url.pathname);
   if(mutable){
     event.respondWith((async () => {

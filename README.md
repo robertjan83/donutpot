@@ -85,3 +85,13 @@ Dit is **echte Web Push** (Push API), niet een notificatie die alleen werkt zola
 - Bestaande als betaald gemarkeerde donuts van vóór deze wijziging missen een betaald bedrag. De app toont hiervoor expliciet een waarschuwing en rekent voorlopig €1 per stuk. Het historische echte Tikkie-bedrag is niet met zekerheid terug te halen uit alleen `paid=true`; corrigeer deze historische geldbedragen niet stilzwijgend.
 - Gebruikers blijven zelf verantwoordelijk voor het correct invullen van het bedrag bij Tikkie en het pas na succesvolle betaling bevestigen. DONUT OPS kan Tikkie-betalingen niet automatisch verifiëren.
 - **Vereist:** de gewijzigde `firestore.rules` opnieuw publiceren in Firebase Console, anders kan de app het nettobedrag bij nieuw bevestigde betalingen niet bewaren.
+
+## Toestelondersteuning bij notificaties (Samsung / Chrome / iOS)
+
+- De knop **Quizmeldingen aanzetten** is na inloggen voor elk account zichtbaar. Op niet-ondersteunde toestellen blijft hij aanklikbaar en geeft uitleg over de ontbrekende browserfuncties, in plaats van stilzwijgend uitgeschakeld te worden.
+- Samsung Internet ondersteunt Web Push in principe, maar ondersteuning verschilt per browser-/PWA-versie en Android-instellingen. Als het niet lukt, installeer DONUT OPS via de nieuwste **Google Chrome voor Android** en geef notificatierechten aan zowel de site als de browser/PWA.
+- Android: controleer zowel de site-instelling voor meldingen als **Instellingen → Apps → Meldingen** van de relevante browser of PWA; eerdere weigeringen moeten via de systeem- of website-instellingen worden opgeheven.
+- iOS: push kan alleen vanaf **iOS 16.4** met een **aan het beginscherm toegevoegde webapp**, niet vanuit een gewoon Safari-tabblad. Zet meldingen aan via de geïnstalleerde app.
+- Als de serviceworker nog installeert of bijwerkt, wacht de abonnementsregistratie nu op `navigator.serviceWorker.ready`.
+- De nieuwe serviceworker `donutops-pwa-v9` haalt `push-client.js` bij online gebruik netwerk-eerst op, zodat toestellen de compatibiliteitsfix ontvangen zonder herinstallatie.
+- Dit is een verbetering van de foutmelding en registratie, **geen** garantie dat de besturingssystemen daadwerkelijke push bezorgen. Test toestemming en bezorging per browser/toestel.

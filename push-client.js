@@ -21,8 +21,34 @@ export function setupQuizNotifications(auth,db) {
   const note=document.getElementById('quizPushStatus');
   if(!btn)return {disableBeforeSignOut:async()=>{}};
   let user=null,busy=false;
-  const supported=('serviceWorker' in navigator)&&('PushManager' in window)&&
-    ('Notification' in window)&&Boolean(crypto?.subtle);
+  const support=()=>({
+    secure:window.isSecureContext,
+    worker:'serviceWorker' in navigator,
+    push:'PushManager' in window,
+    notification:'Notification' in window && typeof Notification.requestPermission==='function',
+    crypto:!!(window.crypto&&window.crypto.subtle)
+  });
+  const supported=()=>Object.values(support()).every(Boolean);
+  const isIOS=/iPad|iPhone|iPod/i.test(navigator.userAgent||'');
+  const isInstalled=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const isSamsungBrowser=/SamsungBrowser/i.test(navigator.userAgent||'');
+  function guidance(){
+    const available=support();
+    if(isIOS&&!isInstalled)return 'Op iPhone werken webpushmeldingen alleen wanneer DONUT OPS via Safari aan het beginscherm is toegevoegd en als webapp wordt geopend (iOS 16.4 of nieuwer).';
+    if(!available.secure)return 'Voor meldingen moet DONUT OPS via de beveiligde https://-website worden geopend.';
+    if(!available.worker||!available.push||!available.notification||!available.crypto){
+      const missing=[
+        !available.worker?'Service Worker':null,
+        !available.push?'Push API':null,
+        !available.notification?'Notificaties API':null,
+        !available.crypto?'Web Crypto':null
+      ].filter(Boolean).join(', ');
+      return 'Deze browser/PWA biedt niet alle meldingsfuncties ('+missing+'). '+
+        (isSamsungBrowser?'Open DONUT OPS in de actuele Chrome-browser en installeer de PWA via Chrome.':'Open DONUT OPS in de nieuwste Chrome op Android, of via de geïnstalleerde Safari-PWA op iPhone.');
+    }
+    if(Notification.permission==='denied')return 'Meldingen zijn eerder geblokkeerd. Zet notificaties voor DONUT OPS en de gebruikte browser aan onder Android Instellingen > Apps > Meldingen én controleer de websitemachtigingen in Chrome of Samsung Internet.';
+    return '';
+  }
   const optedIn=()=>{try{return localStorage.getItem(OPT_IN)==='yes';}catch(e){return false;}};
   const remember=enabled=>{try{enabled?localStorage.setItem(OPT_IN,'yes'):localStorage.removeItem(OPT_IN);}catch(e){}};
   const inform=t=>{if(note)note.textContent=t;};
@@ -30,18 +56,27 @@ export function setupQuizNotifications(auth,db) {
     btn.classList.toggle('hidden',!user);
     btn.disabled=busy;
     if(!user)return;
-    if(!supported){btn.textContent='🔕 Meldingen niet ondersteund';btn.disabled=true;return;}
+    if(!supported()){
+      btn.textContent='🔕 Meldingen: hulp nodig?';
+      btn.title='Tik om te zien waarom meldingen niet werken';
+      btn.setAttribute('aria-pressed','false');
+      inform(guidance());
+      return;
+    }
     const enabled=Notification.permission==='granted'&&optedIn();
-    btn.textContent=enabled?'🔔 Quizmeldingen aan':'🔕 Quizmeldingen aanzetten';
+    btn.textContent=enabled?'🔔 Quizmeldingen aan':Notification.permission==='denied'?'🔕 Meldingen geblokkeerd':'🔕 Quizmeldingen aanzetten';
+    btn.title=Notification.permission==='denied'?'Tik voor hulp bij het toestaan van meldingen':'Zet meldingen voor nieuwe quizvragen aan of uit';
     btn.setAttribute('aria-pressed',String(enabled));
   }
   async function getRegistration(){
     let reg=await navigator.serviceWorker.getRegistration('./');
     if(!reg)reg=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});
-    return reg;
+    // Ensure the service worker is active before subscribe(); some Samsung
+    // devices open the installed PWA while an update is still installing.
+    return (await navigator.serviceWorker.ready)||reg;
   }
   async function subscribeAndSave(){
-    if(!user||!supported||Notification.permission!=='granted')return;
+    if(!user||!supported()||Notification.permission!=='granted')return;
     const uid=user.uid;
     const reg=await getRegistration();
     let subscription=await reg.pushManager.getSubscription();
@@ -59,7 +94,7 @@ export function setupQuizNotifications(auth,db) {
   }
   async function deactivate(keepPreference=false){
     if(!keepPreference)remember(false);
-    if(!user||!supported)return;
+    if(!user||!supported())return;
     const reg=await getRegistration();
     const subscription=await reg.pushManager.getSubscription();
     if(!subscription)return;
@@ -71,17 +106,19 @@ export function setupQuizNotifications(auth,db) {
     inform('Quizmeldingen uitgeschakeld op dit apparaat.');
   }
   btn.addEventListener('click',async()=>{
-    if(busy||!user||!supported)return;
+    if(busy||!user)return;
+    if(!supported()||Notification.permission==='denied'){
+      inform(guidance());
+      return;
+    }
     busy=true;render();
     try{
       if(Notification.permission==='granted'&&optedIn()){
         await deactivate();
       }else{
-        if(Notification.permission==='denied')
-          throw Error('Meldingen staan geblokkeerd. Zet ze aan bij de instellingen van DONUT OPS op je telefoon.');
         // The browser permission prompt is directly triggered by the tap.
         const permission=await Notification.requestPermission();
-        if(permission!=='granted')throw Error('Geen toestemming voor meldingen gegeven.');
+        if(permission!=='granted')throw Error(permission==='denied'?'De browser blokkeert meldingen. '+guidance():'Er is nog geen toestemming gegeven. Kies Toestaan wanneer de browser dat vraagt.');
         remember(true);
         await subscribeAndSave();
       }
@@ -92,9 +129,9 @@ export function setupQuizNotifications(auth,db) {
     user=nextUser;
     inform('');
     render();
-    if(user&&supported&&optedIn()&&Notification.permission==='granted'){
+    if(user&&supported()&&optedIn()&&Notification.permission==='granted'){
       try{await subscribeAndSave();}catch(e){inform('Meldingen opnieuw registreren: '+(e.message||e));}
-    }else if(user&&supported&&Notification.permission==='default'){
+    }else if(user&&supported()&&Notification.permission==='default'){
       inform('Tik op “Quizmeldingen aanzetten” om meldingen te ontvangen. Ook als de PWA dicht is.');
     }
   });

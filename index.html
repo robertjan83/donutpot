@@ -109,7 +109,7 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 .quiz-setup input{width:100%;margin:6px 0 12px;background:#0b1017;border:1px solid #748094;border-radius:9px;color:#fff;padding:12px}
 @media(max-width:700px){.quiz-panel{padding:16px}.quiz-options{grid-template-columns:1fr}.quiz-current{padding:15px}.quiz-option{min-height:58px}}
 
-.quiz-push-status{font-size:.82rem;line-height:1.5;color:#c9eace;margin:0 0 10px}
+.quiz-push-status{font-size:.84rem;line-height:1.5;color:#ecedf1;margin:12px 0;padding:10px 13px;border:1px solid #3b4754;background:#1a242e;border-radius:10px}.quiz-push-status:empty{display:none}
 .quiz-push-status:empty{display:none}
 .ledger-note{font-size:.82rem;color:#f1c3b8;line-height:1.5;margin:9px 0}
 .ledger-note:empty{display:none}
@@ -119,8 +119,9 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
 <header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini hidden" id="quizPushBtn" type="button" aria-pressed="false">🔕 Quizmeldingen aanzetten</button><button class="secondary mini" id="soundBtn" type="button" title="Geluid aan- of uitzetten" aria-pressed="true">🔊 Geluid aan</button><button class="secondary mini hidden" id="adminBtn" type="button">⚙️ Admin</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
+<p id="quizPushStatus" class="quiz-push-status" role="status" aria-live="polite"></p>
 <section class="hero"><div><p class="eyebrow">// OPERATION: ZERO KILLS</p><h1>NO KILLS.<br><span>JUST DONUTS.</span></h1><p class="muted">Een Call of Duty-potje met <strong>0 kills</strong>? Registreer zelf een donut. Iedere donut kost <strong>€ 1</strong>. Betaal meteen of laat de schuld oplopen.</p><div class="buttons"><button id="addBtn" type="button" class="donut-action"><span class="donut-cta-copy"><small>0 KILLS GESPEELD?</small><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button><a class="tikkie-link" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer">BETAAL VIA TIKKIE ↗</a></div><div class="hint">Betalen gaat via Tikkie. Je markeert zelf of je betaling is gedaan.</div></div><div class="donut" aria-hidden="true">🍩</div></section>
-<p id="quizPushStatus" class="quiz-push-status" role="status" aria-live="polite"></p><section id="quizSection" class="quiz-panel hidden" aria-label="Gezamenlijke Call of Duty-quiz"></section>
+<section id="quizSection" class="quiz-panel hidden" aria-label="Gezamenlijke Call of Duty-quiz"></section>
 <div class="stats">
 <div class="stat"><label>BETAALD GEMELD</label><b id="paidTotal">€ 0,00</b><small>Door spelers als betaald bevestigd</small></div>
 <div class="stat"><label>OPENSTAAND BIJ SQUAD</label><b id="open">€ 0,00</b><small>Bedrag na geldende kortingen</small></div>
