@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1015">
+  <meta name="description" content="Speaky Bingo: streep de klassieke Call of Duty-excuses af tijdens je gamesessie.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Speaky Bingo | DONUT OPS</title>
+  <style>
+    :root { color-scheme: dark; font-family: Arial, Helvetica, sans-serif; background:#0d1015; color:#f4f4f4; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:#0d1015; }
+    button, a { font:inherit; }
+    .container { max-width:820px; padding:23px 14px 48px; margin:0 auto; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:22px; }
+    .back { color:#b6bec8; text-decoration:none; font-size:.86rem; border-radius:6px; padding:6px 0; }
+    .back:hover, .back:focus-visible { color:#fff; text-decoration:underline; }
+    .topbar small { color:#ff83b1; font-weight:800; letter-spacing:.11em; font-size:.68rem; }
+    .sheet { background:#fff; color:#111; padding:clamp(9px,2.5vw,22px); border:3px solid #111; border-radius:3px; box-shadow:0 16px 50px #0008; }
+    h1 { margin:0 0 18px; padding:6px 3px 13px; text-align:center; font-family:Impact,"Arial Black",Arial,sans-serif; font-size:clamp(2.15rem,8.5vw,5.5rem); letter-spacing:.02em; line-height:1; font-weight:900; text-transform:uppercase; }
+    h1 .accent { color:#dd2525; }
+    h1 .underline { display:inline-block; border-bottom:6px solid #dd2525; padding-bottom:3px; }
+    .board { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); border:2px solid #111; }
+    .square { position:relative; isolation:isolate; aspect-ratio:1/1; display:grid; place-items:center; min-width:0; margin:0; padding:7px; border:0; border-right:2px solid #111; border-bottom:2px solid #111; border-radius:0; background:#fff; color:#111; text-align:center; cursor:pointer; font-size:clamp(.66rem,2.55vw,1.15rem); font-weight:800; line-height:1.13; overflow-wrap:break-word; hyphens:auto; }
+    .square:nth-child(4n) { border-right:0; }
+    .square:nth-last-child(-n+4) { border-bottom:0; }
+    .square:hover { background:#f7f7f7; }
+    .square:focus-visible { outline:3px solid #ff5f9b; outline-offset:-5px; z-index:2; }
+    .square span { position:relative; z-index:1; }
+    .square[aria-pressed="true"] { background:#fff3f3; }
+    .square[aria-pressed="true"]::before, .square[aria-pressed="true"]::after { content:""; pointer-events:none; position:absolute; z-index:2; left:50%; top:50%; height:6px; width:85%; border-radius:3px; background:#df2424; opacity:.75; transform:translate(-50%,-50%) rotate(45deg); }
+    .square[aria-pressed="true"]::after { transform:translate(-50%,-50%) rotate(-45deg); }
+    .controls { display:flex; gap:16px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin:20px 2px 8px; }
+    .progress { margin:0; color:#d7d9de; font-size:.96rem; }
+    .progress strong { color:#fff; }
+    .reset { border:1px solid #606775; background:#222a36; color:#fff; padding:10px 15px; border-radius:8px; font-weight:800; cursor:pointer; }
+    .reset:hover { background:#343e4d; }
+    .reset:focus-visible { outline:3px solid #ff5f9b; outline-offset:3px; }
+    .message { min-height:1.3em; color:#ff89b9; font-size:.92rem; font-weight:800; margin:8px 2px 0; }
+    .note { color:#9fa7b2; font-size:.76rem; line-height:1.6; margin:17px 2px 0; }
+    @media(max-width:380px) {
+      .sheet { padding:7px; }
+      .board { border-width:1.5px; }
+      .square { padding:3px; border-width:1.5px; font-size:clamp(.6rem,2.85vw,.7rem); }
+      .square[aria-pressed="true"]::before,.square[aria-pressed="true"]::after { height:4px; }
+      h1 { margin-bottom:11px; }
+    }
+    @media(prefers-reduced-motion:no-preference) { .square { transition:background .12s ease; } }
+  </style>
+</head>
+<body>
+<main class="container">
+  <nav class="topbar" aria-label="Terug naar de Donutpot">
+    <a class="back" href="./">← Terug naar DONUT OPS</a>
+    <small>GEHEIME SQUAD-MISSIE 🎯</small>
+  </nav>
+  <section class="sheet" aria-label="Speaky Bingo-kaart">
+    <h1><span class="underline">SPEAKY</span> <span class="accent">BINGO</span></h1>
+    <div class="board" id="board" role="group" aria-label="Zestien Call of Duty-uitspraken"></div>
+  </section>
+  <div class="controls">
+    <p class="progress" id="progress" aria-live="polite"><strong>0/16</strong> afgekruist</p>
+    <button class="reset" type="button" id="reset">Nieuwe ronde ↻</button>
+  </div>
+  <p class="message" id="message" role="status" aria-live="polite"></p>
+  <p class="note">Hoor je een excuus? Tik op het vakje voor een rood kruisje. Vier op een rij = BINGO. Je kruisjes blijven op dit apparaat bewaard, ook als je de pagina sluit.</p>
+</main>
+<script>
+  (() => {
+    'use strict';
+    const phrases = [
+      'Hij was one shot',
+      'Er kwam een hele squad',
+      '1 kogel te weinig',
+      'Ik had lag',
+      'COD timing',
+      'Hij camped hard',
+      'Ik zag hem niet',
+      'Mijn gun deed niks',
+      'Ik schoot eerst!',
+      'Ik hoorde hem niet',
+      'Dat was echt lucky',
+      'Ik was afgeleid',
+      'Mijn team deed niks',
+      'Mijn armor was op',
+      'Ik was aan het reloaden',
+      'De hitbox is kapot'
+    ];
+    const storageKey = 'donutops-speaky-bingo-v1';
+    const board = document.getElementById('board');
+    const progress = document.getElementById('progress');
+    const message = document.getElementById('message');
+    const reset = document.getElementById('reset');
+    const lines = [];
+    for (let row = 0; row < 4; row++) lines.push([0,1,2,3].map(col => row * 4 + col));
+    for (let col = 0; col < 4; col++) lines.push([0,1,2,3].map(row => row * 4 + col));
+    lines.push([0,5,10,15], [3,6,9,12]);
+    const marked = new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(saved)) saved.forEach(index => {
+        if (Number.isInteger(index) && index >= 0 && index < phrases.length) marked.add(index);
+      });
+    } catch (_) { /* Het spel blijft ook zonder opslag werken. */ }
+    function save() {
+      try { localStorage.setItem(storageKey, JSON.stringify([...marked])); }
+      catch (_) { /* Opslag niet beschikbaar: sessie blijft wel speelbaar. */ }
+    }
+    function update() {
+      for (const button of board.children) {
+        button.setAttribute('aria-pressed', String(marked.has(Number(button.dataset.index))));
+      }
+      const count = marked.size;
+      progress.innerHTML = '<strong>' + count + '/16</strong> afgekruist';
+      const bingos = lines.filter(line => line.every(index => marked.has(index))).length;
+      message.textContent = bingos ? 'BINGO! 🎉 ' + bingos + (bingos === 1 ? ' lijn compleet.' : ' lijnen compleet.') : '';
+    }
+    phrases.forEach((phrase, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'square';
+      button.dataset.index = String(index);
+      button.setAttribute('aria-label', phrase);
+      button.setAttribute('aria-pressed', 'false');
+      const span = document.createElement('span');
+      span.textContent = phrase;
+      button.appendChild(span);
+      button.addEventListener('click', () => {
+        if (marked.has(index)) marked.delete(index);
+        else marked.add(index);
+        save();
+        update();
+      });
+      board.appendChild(button);
+    });
+    reset.addEventListener('click', () => {
+      if (marked.size === 0 || window.confirm('Alle kruisjes wissen en een nieuwe ronde starten?')) {
+        marked.clear();
+        save();
+        update();
+      }
+    });
+    update();
+  })();
+</script>
+</body>
+</html>
