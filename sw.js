@@ -1,6 +1,6 @@
 /* DONUT OPS: online-first shell, offline info page */
-const CACHE_NAME = 'donutops-pwa-v4';
-const PRECACHE = ['./offline.html','./manifest.webmanifest','./pwa.js','./donut-sound.js','./sounds/donut-cartoon.mp3','./sounds/donut-voices.mp3','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
+const CACHE_NAME = 'donutops-pwa-v5';
+const PRECACHE = ['./offline.html','./manifest.webmanifest','./pwa.js','./quiz-ui.js','./quiz-questions.js','./offer-pricing.js','./donut-sound.js','./sounds/donut-cartoon.mp3','./sounds/donut-voices.mp3','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(PRECACHE)).then(()=>self.skipWaiting()));
 });

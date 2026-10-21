@@ -85,11 +85,35 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 .offer-history{margin-top:10px;color:#c3cbd4;font-size:.78rem;line-height:1.65}
 .offer-notice{margin:10px 0;color:#ffc0d8;font-size:.87rem;line-height:1.6;font-weight:600}
 .offer-notice:empty{display:none}
+
+/* One shared in-page quiz: no browser popups */
+.quiz-panel{margin:0 0 22px;padding:23px;background:linear-gradient(135deg,#282030,#161c25 68%);border:1px solid #80506c;border-radius:20px;box-shadow:0 10px 35px #0004}
+.quiz-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.quiz-top h2{font-size:1.5rem;margin:0 0 10px}.quiz-top .eyebrow{margin-bottom:7px}.quiz-top .muted{margin:0}
+.quiz-top>strong{color:#ffc7db;border:1px solid #af6484;background:#503046;padding:11px;border-radius:12px;font-size:.82rem;white-space:nowrap}
+.quiz-current{margin-top:20px;border-radius:15px;background:#111720;border:1px solid #536174;padding:20px}
+.quiz-current>small{color:#ff92bd;font-size:.74rem;letter-spacing:.14em;font-weight:900}
+.quiz-current h3{font-size:1.28rem;margin:11px 0 18px;line-height:1.45}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quiz-option{min-height:67px;background:#262f3b;color:white;border:1px solid #546173;text-align:left;padding:13px 14px;border-radius:12px;font-weight:650;line-height:1.5}
+.quiz-option b{color:#ffa0c5;margin-right:9px}.quiz-option:hover{background:#394353;border-color:#ff80b6}
+.quiz-option:focus-visible{outline:3px solid #ff8bbd;outline-offset:3px}
+.quiz-wait,.quiz-missed,.quiz-earned,.quiz-notice{margin:15px 0 0;border-radius:12px;padding:13px;background:#313141;color:#f9d9e8;line-height:1.55;font-size:.91rem}
+.quiz-earned{background:#183c30;color:#acffcb}.quiz-notice{background:#263744}
+.quiz-winners{border-top:1px solid #544858;margin-top:20px;padding-top:15px;display:grid;gap:10px}
+.quiz-winners>div{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#e1dee4;font-size:.9rem}
+.quiz-winners>div span:last-child{color:#adf5c4;font-size:.81rem}
+.quiz-foot{color:#aeb6c0;font-size:.75rem;line-height:1.5;margin:16px 0 0}
+.quiz-setup{margin-top:16px;background:#151c25;border:1px solid #5d6b7c;padding:18px;border-radius:13px}
+.quiz-setup h3{margin:0 0 8px}.quiz-setup p{color:#c0c7d1;font-size:.85rem;line-height:1.6}
+.quiz-setup input{width:100%;margin:6px 0 12px;background:#0b1017;border:1px solid #748094;border-radius:9px;color:#fff;padding:12px}
+@media(max-width:700px){.quiz-panel{padding:16px}.quiz-options{grid-template-columns:1fr}.quiz-current{padding:15px}.quiz-option{min-height:58px}}
 </style></head><body>
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
 <header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini" id="soundBtn" type="button" title="Geluid aan- of uitzetten" aria-pressed="true">🔊 Geluid aan</button><button class="secondary mini hidden" id="adminBtn" type="button">⚙️ Admin</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
 <section class="hero"><div><p class="eyebrow">// OPERATION: ZERO KILLS</p><h1>NO KILLS.<br><span>JUST DONUTS.</span></h1><p class="muted">Een Call of Duty-potje met <strong>0 kills</strong>? Registreer zelf een donut. Iedere donut kost <strong>€ 1</strong>. Betaal meteen of laat de schuld oplopen.</p><div class="buttons"><button id="addBtn" type="button" class="donut-action"><span class="donut-cta-copy"><small>0 KILLS GESPEELD?</small><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button><a class="tikkie-link" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer">BETAAL VIA TIKKIE ↗</a></div><div class="hint">Betalen gaat via Tikkie. Je markeert zelf of je betaling is gedaan.</div></div><div class="donut" aria-hidden="true">🍩</div></section>
+<section id="quizSection" class="quiz-panel hidden" aria-label="Gezamenlijke Call of Duty-quiz"></section>
 <div class="stats"><div class="stat"><label>TOTAAL DONUTWAARDE</label><b id="total">€ 0</b><small>Alle geregistreerde donuts</small></div><div class="stat"><label>OPENSTAAND BIJ SQUAD</label><b id="open">€ 0,00</b><small>Na de kortingen per speler</small></div><div class="stat"><label>DONUTS · SPELERS</label><b id="counts">0 · 0</b><small>Zero-kill games</small></div></div>
 <section class="balance" aria-labelledby="balanceTitle"><div class="balance-header"><div><strong id="balanceTitle">💸 MIJN DONUTSCHULD</strong><p class="muted" id="myBalance">Log in om je openstaande donuts te zien.</p></div><div id="myDue" class="balance-total">€ 0,00</div></div><p id="discountBreakdown" class="discount-breakdown" aria-live="polite"></p><p id="specialOfferInfo" class="offer-notice" aria-live="polite"></p><div id="paymentActions" class="payment-actions hidden"><a id="settleLink" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer" class="pay-link"><span>1. BETAAL VIA TIKKIE ↗</span><small id="amountToPay">Te betalen: € 0,00</small></a><button id="settleBtn" type="button" class="paid-confirm"><span>2. IK HEB BETAALD ✓</span><small>Schuld aflossen en op € 0 zetten</small></button><p class="payment-note">Vul bij Tikkie het hierboven berekende bedrag <strong>na korting</strong> in, als Tikkie een vrij bedrag toestaat. Keer na de betaling terug en druk op <strong>Ik heb betaald</strong>. De betaling wordt niet automatisch gecontroleerd.</p></div><p id="paymentMessage" class="payment-message" role="status" aria-live="polite"></p><p class="tikkie-expiry">Tikkie geldig t/m 2 november 2026.</p></section>
 <div class="columns"><section class="panel"><p class="eyebrow">// HALL OF SHAME</p><h2>🍩 DONUT RANGLIJST</h2><div id="leaderboard"></div></section><section class="panel"><p class="eyebrow">// LATEST CASUALTIES</p><h2>RECENTE DONUTS</h2><div id="activity"></div></section></div>
@@ -120,12 +144,14 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 <script src="./donut-sound.js" defer></script>
 <script type="module">
 import {calculateDebt,birthdayWeek,validBirthday,offerValid,offerUsed} from './offer-pricing.js';
+import {installQuiz} from './quiz-ui.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendEmailVerification,reload} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,collection,doc,setDoc,getDoc,onSnapshot,addDoc,updateDoc,serverTimestamp,writeBatch,deleteField} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyBiLwy_7E4CyXNNBJaJnxy69VPxd10Hpto",authDomain:"donutpot-b1863.firebaseapp.com",projectId:"donutpot-b1863",storageBucket:"donutpot-b1863.firebasestorage.app",messagingSenderId:"290581669700",appId:"1:290581669700:web:c850a763a9604effe79911"});
 const auth=getAuth(app),db=getFirestore(app),TIKKIE='https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90',PASSWORD='donutpot';
 const $=id=>document.getElementById(id);
+const squadQuiz=installQuiz(auth,db);
 let user=null,players=[],entries=[],offers=[],registerMode=false,registrationInProgress=false,unsubs=[],adminBusy=false;
 const ADMIN_EMAIL='rjpeetoom@gmail.com';
 const adminCandidate=()=>user?.email?.toLowerCase()===ADMIN_EMAIL;
@@ -258,7 +284,7 @@ $('addBtn').onclick=openDonutFlow;
 $('mobileAddBtn').onclick=openDonutFlow;
 let busy=false;
 async function add(pay){if(!user||busy)return;busy=true;let tab=null;if(pay)tab=window.open('about:blank','_blank');
-try{await addDoc(collection(db,'donuts'),{owner:user.uid,paid:false,createdAt:serverTimestamp()});hide('donutModal');window.DonutSound?.play();if(pay){if(tab)tab.location.href=TIKKIE;else window.location.href=TIKKIE;}}
+try{await squadQuiz.addDonut(user.uid);hide('donutModal');window.DonutSound?.play();if(pay){if(tab)tab.location.href=TIKKIE;else window.location.href=TIKKIE;}}
 catch(e){if(tab)tab.close();alert(friendly(e));}finally{busy=false;}}
 $('laterBtn').onclick=()=>{window.DonutSound?.unlock();add(false);};
 $('nowBtn').onclick=()=>{window.DonutSound?.unlock();add(true);};

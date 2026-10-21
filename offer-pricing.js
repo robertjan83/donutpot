@@ -51,7 +51,7 @@ export function calculateDebt(entries,players,offers,owner,basePercent,nowMs=Dat
  let cents=0,extra=0,birthdays=0,actions=0;
  for(const d of outstanding){
   const promo=rates.get(d.id);
-  const pct=Math.max(basePercent,promo?.percent??0);
+  const pct=Math.max(basePercent,promo?.percent??0,d.quizPrizeRound?20:0);
   cents+=100-pct;
   if(promo&&promo.percent>basePercent){extra++;if(promo.kind==='verjaardag')birthdays++;else actions++;}
  }

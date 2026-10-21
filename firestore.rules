@@ -105,6 +105,14 @@ service cloud.firestore {
             && keysOnly(['owner', 'paid', 'createdAt'])
           )
           || (
+            request.resource.data.owner == request.auth.uid
+            && keysOnly(['owner', 'paid', 'createdAt', 'quizPrizeRound'])
+            && request.resource.data.quizPrizeRound is string
+            && get(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.owner == request.auth.uid
+            && get(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.redeemedDonutId == null
+            && getAfter(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.redeemedDonutId == id
+          )
+          || (
             isAdmin()
             && keysOnly(['owner', 'paid', 'createdAt', 'addedBy'])
             && request.resource.data.addedBy == request.auth.uid
@@ -130,6 +138,110 @@ service cloud.firestore {
           && request.resource.data.voidedAt == request.time
         );
       // Preserve corrected donut records as an audit trail; never delete them.
+      allow delete: if false;
+    }
+    // One shared state pointer: players cannot jump to a later unlocked round.
+    match /quizState/{stateId} {
+      allow get, list: if signedIn();
+      allow create: if isAdmin()
+        && stateId == 'main'
+        && keysOnly(['currentRoundId', 'createdAt'])
+        && request.resource.data.currentRoundId == 'q01'
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && stateId == 'main'
+        && resource.data.currentRoundId != 'done'
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['currentRoundId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && getAfter(/databases/$(database)/documents/quizRounds/$(resource.data.currentRoundId)).data.winnerUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/quizRounds/$(resource.data.currentRoundId)).data.nextId == request.resource.data.currentRoundId;
+      allow delete: if false;
+    }
+    // Public rounds omit answer keys; winning requires one atomic transaction.
+    match /quizRounds/{roundId} {
+      allow read: if signedIn();
+      allow create: if isAdmin()
+        && keysOnly(['index', 'startMs', 'nextId', 'winnerUid', 'createdAt'])
+        && request.resource.data.index is int
+        && request.resource.data.index >= 1 && request.resource.data.index <= 25
+        && request.resource.data.startMs is int
+        && request.resource.data.startMs > 0
+        && request.resource.data.nextId is string
+        && request.resource.data.winnerUid == null
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && resource.data.winnerUid == null
+        && get(/databases/$(database)/documents/quizState/main).data.currentRoundId == roundId
+        && request.time.toMillis() >= resource.data.startMs
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['winnerUid', 'winningChoice', 'answeredAt'])
+        && request.resource.data.winnerUid == request.auth.uid
+        && request.resource.data.winningChoice in ['A', 'B', 'C', 'D']
+        && request.resource.data.answeredAt == request.time
+        && get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer == request.resource.data.winningChoice
+        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.result == 'correct'
+        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.choice == request.resource.data.winningChoice
+        && getAfter(/databases/$(database)/documents/quizPrizes/$(roundId)).data.owner == request.auth.uid
+        && getAfter(/databases/$(database)/documents/quizState/main).data.currentRoundId == resource.data.nextId;
+      allow delete: if false;
+      match /attempts/{uid} {
+        allow get: if signedIn() && request.auth.uid == uid;
+        allow list: if false;
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['owner','choice','result','answeredAt'])
+          && request.resource.data.keys().hasAll(['owner','choice','result','answeredAt'])
+          && request.resource.data.owner == uid
+          && request.resource.data.choice in ['A','B','C','D']
+          && request.resource.data.answeredAt == request.time
+          && get(/databases/$(database)/documents/quizState/main).data.currentRoundId == roundId
+          && get(/databases/$(database)/documents/quizRounds/$(roundId)).data.winnerUid == null
+          && request.time.toMillis() >= get(/databases/$(database)/documents/quizRounds/$(roundId)).data.startMs
+          && (
+            (request.resource.data.result == 'wrong'
+              && request.resource.data.choice != get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer)
+            ||
+            (request.resource.data.result == 'correct'
+              && request.resource.data.choice == get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer
+              && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)).data.winnerUid == uid
+              && getAfter(/databases/$(database)/documents/quizPrizes/$(roundId)).data.owner == uid)
+          );
+        allow update, delete: if false;
+      }
+    }
+    // Secret answer keys can be CREATED by the verified admin, but NEVER read
+    // through the client SDK. Security Rules alone compare guesses with keys.
+    match /quizAnswers/{id} {
+      allow read: if false;
+      allow create: if isAdmin()
+        && keysOnly(['answer','createdAt'])
+        && request.resource.data.answer in ['A','B','C','D']
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+    // One winner, one prize per round. A prize is spent in the same atomic
+    // transaction that creates its uniquely linked next donut.
+    match /quizPrizes/{roundId} {
+      allow get, list: if signedIn() && resource.data.owner == request.auth.uid;
+      allow create: if signedIn()
+        && keysOnly(['owner','awardedAt','redeemedDonutId'])
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.awardedAt == request.time
+        && request.resource.data.redeemedDonutId == null
+        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)).data.winnerUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.result == 'correct'
+        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.choice ==
+           get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer;
+      allow update: if signedIn()
+        && resource.data.owner == request.auth.uid
+        && resource.data.redeemedDonutId == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemedDonutId','redeemedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['redeemedDonutId','redeemedAt'])
+        && request.resource.data.redeemedDonutId is string
+        && request.resource.data.redeemedAt == request.time
+        && getAfter(/databases/$(database)/documents/donuts/$(request.resource.data.redeemedDonutId)).data.owner == request.auth.uid
+        && getAfter(/databases/$(database)/documents/donuts/$(request.resource.data.redeemedDonutId)).data.quizPrizeRound == roundId
+        && getAfter(/databases/$(database)/documents/donuts/$(request.resource.data.redeemedDonutId)).data.createdAt == request.time;
       allow delete: if false;
     }
     match /{document=**} {
