@@ -76,3 +76,12 @@ Dit is **echte Web Push** (Push API), niet een notificatie die alleen werkt zola
 **Werking:** de sender controleert `quizState/main`, de huidige ronde, de geplande starttijd en of de ronde nog geen winnaar heeft. De server verstuurt per ronde maximaal één aankondiging naar alle toestellen die zich hebben aangemeld en houdt `quizAnnouncements/{roundId}` bij tegen dubbelen. De serviceworker toont de melding, ook wanneer de PWA gesloten is, en openen leidt naar de quizkaart. De server heeft geen toegang tot antwoordcorrectheid nodig.
 
 **Beperkingen:** GitHub Actions start op zijn vroegst om de vijf minuten en kan vertraging hebben; de melding is dus niet exact op de seconde. Wordt een vraag binnen die tijd beantwoord, dan wordt geen achterhaalde melding gestuurd. Alleen toestemming gevende toestellen ontvangen push, en op iOS is een geïnstalleerde beginscherm-PWA met iOS 16.4+ vereist. Er worden geen pushmeldingen meer verstuurd na 3 november 2026; bestaande quizvragen op de site blijven bereikbaar.
+
+## Juiste totale potwaarde en betalingen na korting
+
+- De dashboard-cijfers zijn **Betaald gemeld**, **Openstaand bij squad** en **Totaal na korting**. Het totaal is de som van netto als betaald geregistreerde bedragen + netto nog openstaande schulden; niet simpelweg donutcount × €1.
+- Bij bevestiging van een geslaagde Tikkie-betaling wordt voor iedere openstaande donut in één batch `paid=true`, `paidCents` (werkelijke netto centen volgens de app op dat moment), `paidDiscountPct` en `paidAt` opgeslagen. Deze bedragen veranderen **niet achteraf** bij het verlopen van een actie of een nieuwe staffelkorting.
+- Een gewonnen quizkorting wordt slechts op de daarmee gekoppelde volgende donut toegepast; bij het aflossen wordt ook dit netto bedrag vastgelegd. Nooit korting stapelen: het hoogste percentage geldt.
+- Bestaande als betaald gemarkeerde donuts van vóór deze wijziging missen een betaald bedrag. De app toont hiervoor expliciet een waarschuwing en rekent voorlopig €1 per stuk. Het historische echte Tikkie-bedrag is niet met zekerheid terug te halen uit alleen `paid=true`; corrigeer deze historische geldbedragen niet stilzwijgend.
+- Gebruikers blijven zelf verantwoordelijk voor het correct invullen van het bedrag bij Tikkie en het pas na succesvolle betaling bevestigen. DONUT OPS kan Tikkie-betalingen niet automatisch verifiëren.
+- **Vereist:** de gewijzigde `firestore.rules` opnieuw publiceren in Firebase Console, anders kan de app het nettobedrag bij nieuw bevestigde betalingen niet bewaren.

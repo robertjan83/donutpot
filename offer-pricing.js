@@ -48,12 +48,16 @@ export function promotionRates(entries,players,offers,nowMs=Date.now()){
 export function calculateDebt(entries,players,offers,owner,basePercent,nowMs=Date.now()){
  const outstanding=entries.filter(e=>e.owner===owner&&!e.paid);
  const rates=promotionRates(entries,players,offers,nowMs);
- let cents=0,extra=0,birthdays=0,actions=0;
+ let cents=0,extra=0,birthdays=0,actions=0,quizCount=0;
+ const lineItems=[];
  for(const d of outstanding){
   const promo=rates.get(d.id);
   const pct=Math.max(basePercent,promo?.percent??0,d.quizPrizeRound?20:0);
-  cents+=100-pct;
+  const lineCents=100-pct;
+  cents+=lineCents;
+  lineItems.push({id:d.id,cents:lineCents,discountPct:pct});
+  if(d.quizPrizeRound&&pct===20&&20>basePercent&&20>(promo?.percent??0))quizCount++;
   if(promo&&promo.percent>basePercent){extra++;if(promo.kind==='verjaardag')birthdays++;else actions++;}
  }
- return {count:outstanding.length,cents,gross:outstanding.length*100,saved:outstanding.length*100-cents,extra,birthdays,actions};
+ return {count:outstanding.length,cents,gross:outstanding.length*100,saved:outstanding.length*100-cents,extra,birthdays,actions,quizCount,lineItems};
 }

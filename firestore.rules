@@ -124,8 +124,18 @@ service cloud.firestore {
           && resource.data.owner == request.auth.uid
           && resource.data.paid == false
           && resource.data.get('voided', false) != true
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid', 'paidCents', 'paidDiscountPct', 'paidAt'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasAll(['paid', 'paidCents', 'paidDiscountPct', 'paidAt'])
           && request.resource.data.paid == true
+          && !resource.data.keys().hasAny(['paidCents', 'paidDiscountPct', 'paidAt'])
+          && request.resource.data.paidCents is int
+          && request.resource.data.paidCents >= 0
+          && request.resource.data.paidCents <= 100
+          && request.resource.data.paidDiscountPct is int
+          && request.resource.data.paidDiscountPct >= 0
+          && request.resource.data.paidDiscountPct <= 100
+          && request.resource.data.paidCents == 100 - request.resource.data.paidDiscountPct
+          && request.resource.data.paidAt == request.time
         ) || (
           isAdmin()
           && resource.data.get('voided', false) != true
