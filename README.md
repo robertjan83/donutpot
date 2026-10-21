@@ -61,3 +61,18 @@ Elke ingelogde gebruiker kan elke andere speler zien en zelf zijn eigen openstaa
 - Bij meerdere kortingen geldt voor de betreffende donut de hoogste korting: 20%-quizprijs, een tijdelijke actie, verjaardagsweek of de gewone/persoonlijke staffel; geen stapeling.
 - **De antwoordcodes staan NIET in de publieke GitHub-code.** Na het publiceren van de bijbehorende Firestore Rules logt de geverifieerde admin in en plakt éénmaal de privé antwoordcode van 25 letters in het op de site zichtbare activatieveld. De keys worden als admin-only creation naar `quizAnswers` weggeschreven, waarvoor `allow read: if false` geldt. Kopieer het volledige privécodeblok NOOIT naar een openbaar repositorybestand.
 - **Vereist:** publiceer de bijbehorende `firestore.rules` in Firebase Console → Firestore Database → Rules → Publish, vóór de activering. Er zijn geen Firebase Cloud Functions of Blaze-abonnement nodig. Firestore-rules gebruiken server-side `getAfter()` om gelijktijdige transacties af te dwingen.
+
+## Pushmeldingen bij nieuwe quizvragen (Android/iOS PWA)
+
+Dit is **echte Web Push** (Push API), niet een notificatie die alleen werkt zolang de pagina openstaat. De installatie als PWA blijft hetzelfde. Spelers geven vanuit hun ingelogde account via **🔕 Quizmeldingen aanzetten** expliciet toestemming. Na toestemming worden hun push-endpoint en encryptiesleutels opgeslagen in de beveiligde Firestore-collectie `pushDevices`; andere spelers mogen deze niet lezen. De speler kan meldingen met dezelfde knop uitschakelen.
+
+**Eenmalige beheerinstelling vereist; anders worden geen meldingen verstuurd:**
+
+1. Publiceer `firestore.rules` in Firebase Console > Firestore Database > Rules > **Publish**.
+2. Maak in Google Cloud voor project `donutpot-b1863` een *apart, minimaal bevoegd* service account aan met de rol **Cloud Datastore User** (`roles/datastore.user`). Maak een JSON-sleutel voor dat account. Plaats het complete JSON-bestand als secret in de GitHub-repository: **Settings > Secrets and variables > Actions > New repository secret**, naam `FIREBASE_SERVICE_ACCOUNT_JSON`. Plaats deze sleutel NOOIT in Git of een chat.
+3. Plaats de bij DONUT OPS aangemaakte Web Push **PRIVATE** VAPID-key (alleen de waarde, zonder `WEB_PUSH_PRIVATE_KEY=`) als tweede GitHub Actions secret, met naam `WEB_PUSH_PRIVATE_KEY`. De bijbehorende *openbare* VAPID-key staat in `push-client.js` en `scripts/send-quiz-push.cjs`.
+4. GitHub Actions moet toegestaan zijn. Bekijk **Actions > DONUT OPS Quizmeldingen** en start één keer handmatig via **Run workflow** om te controleren dat de secrets correct staan. De Action controleert vervolgens elke 5 minuten automatisch op een nieuwe beschikbare quizvraag.
+
+**Werking:** de sender controleert `quizState/main`, de huidige ronde, de geplande starttijd en of de ronde nog geen winnaar heeft. De server verstuurt per ronde maximaal één aankondiging naar alle toestellen die zich hebben aangemeld en houdt `quizAnnouncements/{roundId}` bij tegen dubbelen. De serviceworker toont de melding, ook wanneer de PWA gesloten is, en openen leidt naar de quizkaart. De server heeft geen toegang tot antwoordcorrectheid nodig.
+
+**Beperkingen:** GitHub Actions start op zijn vroegst om de vijf minuten en kan vertraging hebben; de melding is dus niet exact op de seconde. Wordt een vraag binnen die tijd beantwoord, dan wordt geen achterhaalde melding gestuurd. Alleen toestemming gevende toestellen ontvangen push, en op iOS is een geïnstalleerde beginscherm-PWA met iOS 16.4+ vereist. Er worden geen pushmeldingen meer verstuurd na 3 november 2026; bestaande quizvragen op de site blijven bereikbaar.

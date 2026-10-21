@@ -236,6 +236,33 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/donuts/$(request.resource.data.redeemedDonutId)).data.createdAt == request.time;
       allow delete: if false;
     }
+    // Web Push device tokens are private to the Firebase account which
+    // registered them. Only the scheduled server reads all subscribers.
+    match /pushDevices/{deviceId} {
+      function sameOwner() {
+        return signedIn() && request.resource.data.owner == request.auth.uid;
+      }
+      function validEndpoint() {
+        return request.resource.data.endpoint is string
+          && request.resource.data.endpoint.size() >= 20
+          && request.resource.data.endpoint.size() <= 2048
+          && request.resource.data.endpoint.matches('^https://.+')
+          && request.resource.data.keys is map
+          && request.resource.data.keys.keys().hasAll(['p256dh','auth'])
+          && request.resource.data.keys.keys().hasOnly(['p256dh','auth'])
+          && request.resource.data.keys.p256dh is string
+          && request.resource.data.keys.auth is string
+          && request.resource.data.keys.p256dh.size() <= 512
+          && request.resource.data.keys.auth.size() <= 512
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.keys().hasOnly(['owner','endpoint','keys','updatedAt']);
+      }
+      allow get, list: if signedIn() && resource.data.owner == request.auth.uid;
+      allow create: if sameOwner() && validEndpoint();
+      allow update: if signedIn() && resource.data.owner == request.auth.uid
+        && sameOwner() && validEndpoint();
+      allow delete: if signedIn() && resource.data.owner == request.auth.uid;
+    }
     match /{document=**} {
       allow read, write: if false;
     }
