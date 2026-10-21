@@ -1,17 +1,17 @@
 
 import {QUIZ_QUESTIONS} from './quiz-questions.js';
+import {scheduleQuizRounds} from './quiz-schedule.mjs';
 import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {collection,doc,onSnapshot,getDoc,getDocs,query,where,runTransaction,writeBatch,serverTimestamp,setDoc,addDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-const END=Date.parse('2026-11-03T23:55:00+01:00');
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+// Cryptographically random selection inside the two Europe/Amsterdam windows.
 const delayRandom=()=>{const b=new Uint32Array(1);crypto.getRandomValues(b);return b[0]/4294967296;};
-function schedule(){
- const from=Date.now()+120000;
- if(from>=END-25*120000)throw Error('De periode tot en met 3 november is voorbij.');
- const width=(END-from)/25;
- return Array.from({length:25},(_,i)=>Math.floor(from+(i+.15+.7*delayRandom())*width));
-}
+const schedule=()=>scheduleQuizRounds(25,Date.now(),delayRandom);
+const untilLabel=ms=>{
+ const seconds=Math.max(0,Math.ceil((ms-Date.now())/1000));
+ return Math.floor(seconds/60)+' min '+String(seconds%60).padStart(2,'0')+' sec';
+};
 export function installQuiz(auth,db){
  const el=document.getElementById('quizSection');
  if(!el)throw Error('Quizsection ontbreekt');
@@ -26,7 +26,7 @@ export function installQuiz(auth,db){
  function render(){
   if(!user){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
-  let s='<div class="quiz-top"><div><p class="eyebrow">// DONUT INTEL</p><h2>🎯 SQUAD QUIZ CHALLENGE</h2><p class="muted">25 vragen t/m 3 november · iedereen dezelfde vraag · één poging per speler.</p></div><strong>🏆 20% VOLGENDE DONUT</strong></div>';
+  let s='<div class="quiz-top"><div><p class="eyebrow">// DONUT INTEL</p><h2>🎯 SQUAD QUIZ CHALLENGE</h2><p class="muted">25 vragen t/m 3 november · random 08:30–12:00 en 19:00–22:00 · één poging per speler.</p></div><strong>🏆 20% VOLGENDE DONUT</strong></div>';
   if(pending().length)s+='<p class="quiz-earned">🎟️ '+pending().length+' kortingsbon(nen) klaar voor je volgende donut(s).</p>';
   if(notice)s+='<p class="quiz-notice" role="status">'+safe(notice)+'</p>';
   if(!game){
@@ -37,7 +37,14 @@ export function installQuiz(auth,db){
   }else{
    const round=current(),q=QUIZ_QUESTIONS.find(q=>q.id===round?.id);
    if(!round||!q)s+='<p class="muted">Vraag wordt geladen…</p>';
-   else if(Date.now()<round.startMs)s+='<p class="quiz-wait">⏳ Er staat een vraag klaar. Hij verschijnt op een willekeurig gepland moment.</p>';
+   else if(Date.now()<round.startMs){
+    const timeLeft=round.startMs-Date.now();
+    if(timeLeft<=30*60*1000){
+      s+='<div class="quiz-ready" aria-live="off"><span class="quiz-ready-tag">🎮 GET READY, SQUAD!</span><h3>Nieuwe quizvraag binnen 30 minuten!</h3><p>⏱️ Nog <strong>'+untilLabel(round.startMs)+'</strong> · De eerste met het goede antwoord wint 20% korting.</p><div class="quiz-ready-track"><div style="width:'+Math.max(0,Math.min(100,(30*60*1000-timeLeft)/(30*60*1000)*100))+'%"></div></div></div>';
+    }else{
+      s+='<p class="quiz-wait">⏳ De volgende vraag komt op een willekeurig moment tussen 08:30–12:00 of 19:00–22:00. Vanaf 30 minuten ervoor start de Get Ready-aftelling!</p>';
+    }
+   }
    else{
     s+='<div class="quiz-current"><small>VRAAG '+round.index+' / 25</small><h3>'+safe(q.question)+'</h3>';
     if(attempt?.round===round.id)s+='<p class="quiz-missed">📝 Je enige antwoord is vastgelegd. Je kunt niet opnieuw kiezen. Het systeem controleert je poging automatisch.</p>';
@@ -57,7 +64,7 @@ export function installQuiz(auth,db){
   if(!admin()||busy)return;
   const secret=privateKey.trim().toUpperCase();
   if(!/^[ABCD]{25}$/.test(secret)){report('Vul precies 25 letters A t/m D in.');return;}
-  if(!confirm('Alle 25 vragen nu willekeurig plannen t/m 3 november voor de hele squad?'))return;
+  if(!confirm('Alle 25 vragen willekeurig tussen 08:30–12:00 en 19:00–22:00 plannen t/m 3 november voor de hele squad?'))return;
   busy=true;
   try{
    if((await getDoc(doc(db,'quizState','main'))).exists())throw Error('De quiz is al geactiveerd.');
@@ -67,7 +74,7 @@ export function installQuiz(auth,db){
     batch.set(doc(db,'quizAnswers',q.id),{answer:secret[i],createdAt:serverTimestamp()});
    });
    batch.set(doc(db,'quizState','main'),{currentRoundId:'q01',createdAt:serverTimestamp()});
-   await batch.commit();privateKey='';report('✓ De 25 quizvragen zijn ingepland voor de hele squad.');
+   await batch.commit();privateKey='';report('✓ Alle vragen zijn willekeurig verdeeld over de ochtend- en avondvensters. Vanaf 30 minuten vooraf verschijnt een Get Ready-aftelling.');
   }catch(e){report('Activeren mislukt: '+(e.message||e.code));}finally{busy=false;render();}
  }
  async function claim(round,answerRef){
