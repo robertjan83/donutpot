@@ -53,10 +53,32 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 .activity-paid-count{display:block;color:#a5e6c5;font-size:.8rem;font-weight:750;margin-top:5px;line-height:1.4}
 .easter-link{display:inline-block;margin-left:10px;font-size:.7rem;font-weight:600;letter-spacing:.03em;color:#85919c;text-decoration:none;opacity:.7;white-space:nowrap}
 .easter-link:hover,.easter-link:focus-visible{color:#ff83b1;opacity:1;text-decoration:underline}
+
+/* Small, scrollable, mobile-friendly admin cockpit */
+.admin-modal{width:min(880px,100%);max-height:min(88dvh,900px);overflow-y:auto;overscroll-behavior:contain}
+.admin-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.admin-heading h2{margin:0 0 8px}
+.admin-notice{margin:12px 0;color:#b9ecd0;font-size:.86rem;line-height:1.5}
+.admin-notice:empty{display:none}
+.admin-players{display:grid;gap:13px;margin-top:15px}
+.admin-player{background:#101720;border:1px solid #394453;border-radius:14px;padding:16px}
+.admin-player-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.admin-player-top strong{font-size:1.07rem;overflow-wrap:anywhere}
+.admin-player-info{font-size:.85rem;color:#c0c8d1;line-height:1.65;margin-top:8px}
+.admin-edit{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:12px}
+.admin-edit button{min-width:48px;padding:10px 15px}
+.admin-edit .admin-negative{background:#303945;border:1px solid #8591a0;color:#fff}
+.admin-discount{display:flex;gap:10px;align-items:end;flex-wrap:wrap;border-top:1px solid #344050;margin-top:15px;padding-top:14px}
+.admin-discount label{display:flex;flex-direction:column;gap:5px;font-size:.75rem;color:#bfc9d5;flex:0 1 135px}
+.admin-discount input{width:100%;min-height:40px;border-radius:8px;border:1px solid #576377;background:#090f16;color:#fff;padding:8px 10px;font-size:1rem}
+.admin-discount button{padding:10px 12px;min-height:40px;font-size:.83rem}
+.admin-discount-note{font-size:.79rem;line-height:1.45;color:#e2a6c1;margin-top:10px}
+.admin-discount button:disabled,.admin-edit button:disabled{opacity:.5;cursor:wait}
+@media(max-width:700px){.admin-modal{max-height:90dvh;padding:18px}.admin-player{padding:13px}.admin-discount label{flex:1 1 100px}.admin-discount button{flex:1 1 95px}}
 </style></head><body>
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
-<header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini" id="soundBtn" type="button" title="Geluid aan- of uitzetten" aria-pressed="true">🔊 Geluid aan</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
+<header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini" id="soundBtn" type="button" title="Geluid aan- of uitzetten" aria-pressed="true">🔊 Geluid aan</button><button class="secondary mini hidden" id="adminBtn" type="button">⚙️ Admin</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
 <section class="hero"><div><p class="eyebrow">// OPERATION: ZERO KILLS</p><h1>NO KILLS.<br><span>JUST DONUTS.</span></h1><p class="muted">Een Call of Duty-potje met <strong>0 kills</strong>? Registreer zelf een donut. Iedere donut kost <strong>€ 1</strong>. Betaal meteen of laat de schuld oplopen.</p><div class="buttons"><button id="addBtn" type="button" class="donut-action"><span class="donut-cta-copy"><small>0 KILLS GESPEELD?</small><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button><a class="tikkie-link" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer">BETAAL VIA TIKKIE ↗</a></div><div class="hint">Betalen gaat via Tikkie. Je markeert zelf of je betaling is gedaan.</div></div><div class="donut" aria-hidden="true">🍩</div></section>
 <div class="stats"><div class="stat"><label>TOTAAL DONUTWAARDE</label><b id="total">€ 0</b><small>Alle geregistreerde donuts</small></div><div class="stat"><label>OPENSTAAND BIJ SQUAD</label><b id="open">€ 0,00</b><small>Na de kortingen per speler</small></div><div class="stat"><label>DONUTS · SPELERS</label><b id="counts">0 · 0</b><small>Zero-kill games</small></div></div>
 <section class="balance" aria-labelledby="balanceTitle"><div class="balance-header"><div><strong id="balanceTitle">💸 MIJN DONUTSCHULD</strong><p class="muted" id="myBalance">Log in om je openstaande donuts te zien.</p></div><div id="myDue" class="balance-total">€ 0,00</div></div><p id="discountBreakdown" class="discount-breakdown" aria-live="polite"></p><div id="paymentActions" class="payment-actions hidden"><a id="settleLink" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer" class="pay-link"><span>1. BETAAL VIA TIKKIE ↗</span><small id="amountToPay">Te betalen: € 0,00</small></a><button id="settleBtn" type="button" class="paid-confirm"><span>2. IK HEB BETAALD ✓</span><small>Schuld aflossen en op € 0 zetten</small></button><p class="payment-note">Vul bij Tikkie het hierboven berekende bedrag <strong>na korting</strong> in, als Tikkie een vrij bedrag toestaat. Keer na de betaling terug en druk op <strong>Ik heb betaald</strong>. De betaling wordt niet automatisch gecontroleerd.</p></div><p id="paymentMessage" class="payment-message" role="status" aria-live="polite"></p><p class="tikkie-expiry">Tikkie geldig t/m 2 november 2026.</p></section>
@@ -67,18 +89,36 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 <div class="pwa-install-instructions hidden" id="pwaInstallInstructions"></div>
 <div class="pwa-install-actions"><button type="button" id="pwaInstallAccept">📲 Installeer app</button><button type="button" class="secondary" id="pwaInstallLater">Niet nu</button></div>
 </section>
+<div class="overlay hidden" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+<div class="modal admin-modal">
+  <div class="admin-heading"><div><p class="eyebrow">// SQUAD COMMAND</p><h2 id="adminTitle">🍩 MINI ADMIN</h2><p class="muted">Corrigeer donuts en beheer persoonlijke kortingsafspraken.</p></div><button class="secondary mini" data-close="adminModal" type="button" aria-label="Adminpaneel sluiten">✕</button></div>
+  <p class="hint">−1 corrigeert eerst de nieuwste openstaande donut. Als alles betaald is, wordt de nieuwste betaalde donut gecorrigeerd. Correcties blijven voor controle in Firebase bewaard.</p>
+  <p class="admin-notice" id="adminStatus" role="status" aria-live="polite"></p>
+  <div id="adminPlayers" class="admin-players"></div>
+</div></div>
+<div class="overlay hidden" id="adminVerify" role="dialog" aria-modal="true" aria-labelledby="verifyTitle"><div class="modal">
+<p class="eyebrow">// SECURITY CHECK</p><h2 id="verifyTitle">ADMIN VERIFIËREN</h2>
+<p class="muted">Alleen een <strong>geverifieerd</strong> Firebase-account met rjpeetoom@gmail.com krijgt adminrechten. Verifieer eerst je e-mailadres.</p>
+<p class="admin-notice" id="verifyStatus" role="status"></p>
+<button id="sendVerifyBtn" type="button">✉️ VERIFICATIEMAIL STUREN</button>
+<button id="checkVerifyBtn" type="button" class="secondary">✓ IK HEB MIJN MAIL BEVESTIGD</button>
+<button type="button" class="secondary" data-close="adminVerify">SLUITEN</button>
+</div></div>
 <div class="overlay hidden" id="register"><form class="modal" id="accountForm"><p class="eyebrow">// FIREBASE SQUAD LOGIN</p><h2 id="authTitle">SPELER INLOGGEN</h2><p class="muted">Log in met je e-mailadres en wachtwoord, of maak een account aan.</p><label for="email">E-MAIL</label><input type="email" id="email" autocomplete="email" required placeholder="jij@voorbeeld.nl"><label for="authPass">WACHTWOORD</label><input type="password" id="authPass" autocomplete="current-password" minlength="6" required placeholder="Minstens 6 tekens"><div id="nameArea" class="hidden"><label for="nickname">GAMERTAG</label><input id="nickname" maxlength="24" minlength="2" placeholder="Bijv. CaptainDonut"></div><p class="error" id="accountError"></p><button id="authSubmit">INLOGGEN ↗</button><button class="secondary" type="button" id="authToggle">NIEUW ACCOUNT MAKEN</button><button class="secondary" type="button" data-close="register">ANNULEREN</button><p class="hint">Accounts worden veilig opgeslagen via Firebase Authentication.</p></form></div>
 <div class="overlay hidden" id="donutModal"><div class="modal"><div style="font-size:3.4rem;text-align:center">🍩</div><p class="eyebrow">ZERO KILLS CONFIRMED</p><h2>OOPS. EEN DONUT!</h2><p class="muted">Je registreert 1 donut van € 1. Wat wil je doen?</p><button id="laterBtn">🍩 TOEVOEGEN · LATER BETALEN</button><button class="secondary" id="nowBtn">🍩 TOEVOEGEN · DIRECT TIKKIE ↗</button><button class="secondary" data-close="donutModal">ANNULEREN</button><p class="hint">Een directe Tikkie-keuze markeert de donut nog niet automatisch als betaald.</p></div></div>
 <script src="./pwa.js" defer></script>
 <script src="./donut-sound.js" defer></script>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,collection,doc,setDoc,getDoc,onSnapshot,addDoc,updateDoc,serverTimestamp,writeBatch} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendEmailVerification,reload} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {getFirestore,collection,doc,setDoc,getDoc,onSnapshot,addDoc,updateDoc,serverTimestamp,writeBatch,deleteField} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyBiLwy_7E4CyXNNBJaJnxy69VPxd10Hpto",authDomain:"donutpot-b1863.firebaseapp.com",projectId:"donutpot-b1863",storageBucket:"donutpot-b1863.firebasestorage.app",messagingSenderId:"290581669700",appId:"1:290581669700:web:c850a763a9604effe79911"});
 const auth=getAuth(app),db=getFirestore(app),TIKKIE='https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90',PASSWORD='donutpot';
 const $=id=>document.getElementById(id);
-let user=null,players=[],entries=[],registerMode=false,registrationInProgress=false,unsubs=[];
+let user=null,players=[],entries=[],registerMode=false,registrationInProgress=false,unsubs=[],adminBusy=false;
+const ADMIN_EMAIL='rjpeetoom@gmail.com';
+const adminCandidate=()=>user?.email?.toLowerCase()===ADMIN_EMAIL;
+const isAdmin=()=>Boolean(adminCandidate()&&user.emailVerified);
 const show=id=>$(id).classList.remove('hidden'),hide=id=>$(id).classList.add('hidden');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const date=v=>v?.toDate?.()?.toLocaleString('nl-NL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})||'Zojuist';
@@ -88,15 +128,24 @@ const me=()=>players.find(p=>p.id===user?.uid);
 // OPENSTAANDE aantal van één speler, niet voor historische betaalde donuts.
 // Reken in hele centen zodat afrondingsfouten worden vermeden.
 const euroFormatter=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'});
-const discountPct=count=>count>=10?15:count>=5?10:0;
-const owedCents=count=>count*(100-discountPct(count));
+const standardDiscountPct=count=>count>=10?15:count>=5?10:0;
+function discountPct(count,owner){
+  const custom=players.find(p=>p.id===owner)?.customDiscount;
+  if(custom && Number.isInteger(custom.minDonuts) && Number.isInteger(custom.percent)
+    && custom.minDonuts>=1 && custom.minDonuts<=999 && custom.percent>=0 && custom.percent<=100
+    && count>=custom.minDonuts)return custom.percent;
+  return standardDiscountPct(count);
+}
+const owedCents=(count,owner)=>count*(100-discountPct(count,owner));
 const euros=cents=>euroFormatter.format(cents/100);
 function render(){
 const unpaid=entries.filter(e=>!e.paid),mine=entries.filter(e=>e.owner===user?.uid),due=mine.filter(e=>!e.paid).length;
 const perPlayer=new Map();
 for(const entry of unpaid)perPlayer.set(entry.owner,(perPlayer.get(entry.owner)||0)+1);
-const squadDueCents=[...perPlayer.values()].reduce((sum,count)=>sum+owedCents(count),0);
-const myDueCents=owedCents(due),discount=discountPct(due);
+const squadDueCents=[...perPlayer.entries()].reduce((sum,[owner,count])=>sum+owedCents(count,owner),0);
+const myDueCents=owedCents(due,user?.uid),discount=discountPct(due,user?.uid);
+$('adminBtn').classList.toggle('hidden',!adminCandidate());
+$('adminBtn').textContent=isAdmin()?'⚙️ Admin':'🔐 Admin activeren';
 $('total').textContent=euros(entries.length*100);$('open').textContent=euros(squadDueCents);$('counts').textContent=entries.length+' · '+players.length;
 $('userBtn').textContent=user?'👤 '+(me()?.name||user.email)+' · UITLOGGEN':'ACCOUNT MAKEN';
 $('myBalance').textContent=user?(me()?.name||'Jij')+': '+mine.length+' donuts totaal · '+due+' openstaand':'Log in om je eigen donuts te registreren.';
@@ -106,13 +155,16 @@ $('amountToPay').textContent='Te betalen: '+euros(myDueCents)+' ('+due+' donut'+
 if(!user||!due){$('discountBreakdown').textContent='';}
 else if(discount){
 const saved=due*100-myDueCents;
-$('discountBreakdown').textContent=due+' donuts × € 1,00 = '+euros(due*100)+' · '+discount+'% korting (−'+euros(saved)+')'+(discount===10?' · Vanaf 10 donuts 15% korting.':'');
+const custom=me()?.customDiscount;
+const hasCustom=custom&&due>=custom.minDonuts;
+$('discountBreakdown').textContent=due+' donuts × € 1,00 = '+euros(due*100)+' · '+discount+'% '+(hasCustom?'persoonlijke korting':'korting')+' (−'+euros(saved)+')'+(!hasCustom&&discount===10?' · Vanaf 10 donuts 15% korting.':'');
 }else{
-$('discountBreakdown').textContent=due+' donuts × € 1,00 · Nog '+(5-due)+' donut'+(5-due===1?'':'s')+' tot 10% korting.';
+const custom=me()?.customDiscount;
+$('discountBreakdown').textContent=due+' donuts × € 1,00 · '+(custom&&due<custom.minDonuts?'Persoonlijke korting van '+custom.percent+'% vanaf '+custom.minDonuts+' donuts.':'Nog '+(5-due)+' donut'+(5-due===1?'':'s')+' tot 10% korting.');
 }
 $('paymentMessage').textContent=user&&!due?'✅ Alles afgelost! Je donutschuld is € 0,00.':'';
 const ordered=[...players].sort((a,b)=>entries.filter(e=>e.owner===b.id).length-entries.filter(e=>e.owner===a.id).length);
-$('leaderboard').innerHTML=ordered.length?ordered.map((p,i)=>{const matches=entries.filter(e=>e.owner===p.id),open=matches.filter(e=>!e.paid).length;return '<div class="line"><div class="rank">'+(i+1)+'</div><div class="avatar">'+esc(p.name[0]?.toUpperCase()||'?')+'</div><div class="who"><strong>'+esc(p.name)+'</strong><small>'+matches.length+' donuts totaal</small></div><div class="amount">'+matches.length+' 🍩<small>'+euros(owedCents(open))+' open'+(discountPct(open)?' · '+discountPct(open)+'% korting':'')+'</small></div></div>';}).join(''):'<p class="muted">Nog geen spelers.</p>';
+$('leaderboard').innerHTML=ordered.length?ordered.map((p,i)=>{const matches=entries.filter(e=>e.owner===p.id),open=matches.filter(e=>!e.paid).length;return '<div class="line"><div class="rank">'+(i+1)+'</div><div class="avatar">'+esc(p.name[0]?.toUpperCase()||'?')+'</div><div class="who"><strong>'+esc(p.name)+'</strong><small>'+matches.length+' donuts totaal</small></div><div class="amount">'+matches.length+' 🍩<small>'+euros(owedCents(open,p.id))+' open'+(discountPct(open,p.id)?' · '+discountPct(open,p.id)+'% korting':'')+'</small></div></div>';}).join(''):'<p class="muted">Nog geen spelers.</p>';
 // Tel alle daadwerkelijk als betaald gemarkeerde donuts per speler.
 // Dit is een cumulatief totaal, niet het aantal donuts van één betaling.
 const paidTotalsByUser=new Map();
@@ -131,6 +183,7 @@ $('activity').innerHTML=entries.length?[...entries]
       paidLabel+'</small></div><div class="amount status">'+
       (e.paid?'BETAALD ✓':'€ 1 OPEN')+'</div></div>';
   }).join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
+if(isAdmin()&&!$('adminModal').classList.contains('hidden'))renderAdmin();
 }
 function authModal(mode=false){registerMode=mode;$('authTitle').textContent=mode?'ACCOUNT MAKEN':'SPELER INLOGGEN';$('authSubmit').textContent=mode?'ACCOUNT AANMAKEN ↗':'INLOGGEN ↗';$('authToggle').textContent=mode?'IK HEB AL EEN ACCOUNT':'NIEUW ACCOUNT MAKEN';$('nameArea').classList.toggle('hidden',!mode);$('nickname').required=mode;$('accountError').textContent='';show('register');}
 // Onthoud alleen dat dit apparaat al toegang heeft; sla het wachtwoord niet op.
@@ -193,18 +246,125 @@ $('laterBtn').onclick=()=>{window.DonutSound?.unlock();add(false);};
 $('nowBtn').onclick=()=>{window.DonutSound?.unlock();add(true);};
 $('settleBtn').onclick=async()=>{
 if(!user)return;const open=entries.filter(e=>e.owner===user.uid&&!e.paid);if(!open.length)return;
-if(!confirm('Heb je echt '+euros(owedCents(open.length))+' (na '+discountPct(open.length)+'% korting) via Tikkie betaald? Bevestig alleen na een geslaagde betaling. Hiermee worden alle '+open.length+' openstaande donuts afgelost.'))return;
+if(!confirm('Heb je echt '+euros(owedCents(open.length,user.uid))+' (na '+discountPct(open.length,user.uid)+'% korting) via Tikkie betaald? Bevestig alleen na een geslaagde betaling. Hiermee worden alle '+open.length+' openstaande donuts afgelost.'))return;
 $('settleBtn').disabled=true;
 try{const batch=writeBatch(db);open.forEach(e=>batch.update(doc(db,'donuts',e.id),{paid:true}));await batch.commit();}
 catch(e){alert(friendly(e));}finally{$('settleBtn').disabled=false;}
 };
+
+// Admin: uses signed-in Firebase email + verified status. Firestore rules repeat
+// this check server-side; hiding a button alone is not access control.
+function adminSetStatus(message,error=false){
+  const status=$('adminStatus');
+  status.textContent=message;
+  status.style.color=error?'#ff9797':'#b9ecd0';
+}
+function renderAdmin(){
+  if(!isAdmin()){hide('adminModal');return;}
+  const ordered=[...players].sort((a,b)=>a.name.localeCompare(b.name,'nl'));
+  $('adminPlayers').innerHTML=ordered.length?ordered.map(p=>{
+    const all=entries.filter(e=>e.owner===p.id);
+    const unpaid=all.filter(e=>!e.paid).length;
+    const config=p.customDiscount;
+    const custom=config&&Number.isInteger(config.minDonuts)&&Number.isInteger(config.percent)?config:null;
+    const active=custom&&unpaid>=custom.minDonuts;
+    const detail=custom?'Persoonlijk: '+custom.percent+'% vanaf '+custom.minDonuts+' openstaande donuts'+(active?' (actief)':' (nog niet actief)'):'Standaardstaffel: 5–9 = 10%, 10+ = 15%';
+    return '<section class="admin-player" data-uid="'+esc(p.id)+'">'+
+    '<div class="admin-player-top"><strong>🎮 '+esc(p.name)+'</strong><strong>'+euros(owedCents(unpaid,p.id))+' schuld</strong></div>'+
+    '<div class="admin-player-info">'+all.length+' donuts totaal · '+unpaid+' open · '+(all.length-unpaid)+' betaald</div>'+
+    '<div class="admin-edit"><button data-action="add" data-uid="'+esc(p.id)+'" type="button" aria-label="Eén donut toevoegen voor '+esc(p.name)+'">+1 🍩</button>'+
+    '<button data-action="remove" data-uid="'+esc(p.id)+'" class="admin-negative" type="button" '+(!all.length?'disabled':'')+' aria-label="Eén donut corrigeren bij '+esc(p.name)+'">−1 🍩</button></div>'+
+    '<div class="admin-discount"><label>Vanaf aantal donuts<input class="admin-threshold" type="number" inputmode="numeric" min="1" max="999" step="1" value="'+(custom?custom.minDonuts:5)+'"></label>'+
+    '<label>Persoonlijke korting (%)<input class="admin-percent" type="number" inputmode="numeric" min="0" max="100" step="1" value="'+(custom?custom.percent:10)+'"></label>'+
+    '<button type="button" data-action="save" data-uid="'+esc(p.id)+'">Opslaan</button>'+
+    '<button type="button" data-action="reset" data-uid="'+esc(p.id)+'" class="secondary" '+(!custom?'disabled':'')+'>Standaard</button></div>'+
+    '<p class="admin-discount-note">'+esc(detail)+'</p></section>';
+  }).join(''):'<p class="muted">Er zijn nog geen spelers.</p>';
+}
+$('adminBtn').onclick=()=>{
+  if(!adminCandidate())return;
+  if(!isAdmin()){show('adminVerify');return;}
+  adminSetStatus('');
+  renderAdmin();
+  show('adminModal');
+};
+$('sendVerifyBtn').onclick=async()=>{
+  if(!adminCandidate()||!user)return;
+  const btn=$('sendVerifyBtn');btn.disabled=true;
+  try{await sendEmailVerification(auth.currentUser);$('verifyStatus').textContent='Er is een verificatiemail verstuurd naar '+ADMIN_EMAIL+'. Open de link in de mail.';}
+  catch(e){$('verifyStatus').textContent=friendly(e);}
+  finally{btn.disabled=false;}
+};
+$('checkVerifyBtn').onclick=async()=>{
+  if(!adminCandidate()||!auth.currentUser)return;
+  const btn=$('checkVerifyBtn');btn.disabled=true;
+  try{
+    await reload(auth.currentUser);
+    await auth.currentUser.getIdToken(true);
+    user=auth.currentUser;render();
+    if(isAdmin()){hide('adminVerify');adminSetStatus('Adminaccount geverifieerd.');renderAdmin();show('adminModal');}
+    else{$('verifyStatus').textContent='Je e-mailadres is nog niet geverifieerd. Open eerst de link in de e-mail.';}
+  }catch(e){$('verifyStatus').textContent=friendly(e);}
+  finally{btn.disabled=false;}
+};
+$('adminPlayers').addEventListener('click',async event=>{
+  const button=event.target.closest('button[data-action]');
+  if(!button||adminBusy||!isAdmin())return;
+  const uid=button.dataset.uid,action=button.dataset.action;
+  const player=players.find(p=>p.id===uid);
+  if(!player)return;
+  const all=entries.filter(e=>e.owner===uid);
+  const unpaid=all.filter(e=>!e.paid);
+  const previous=owedCents(unpaid.length,uid);
+  let nextData=null;
+  if(action==='add'){
+    if(!confirm('Corrigeer +1 donut voor '+player.name+'? Openstaand bedrag wordt opnieuw berekend.'))return;
+  }else if(action==='remove'){
+    if(!all.length)return;
+    const selected=[...unpaid].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))[0]
+      || [...all].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))[0];
+    if(!selected)return;
+    const message=selected.paid?'Deze speler heeft géén openstaande donuts. Je corrigeert dus een eerder betaalde donut.':'De nieuwste openstaande donut wordt gecorrigeerd.';
+    if(!confirm('Corrigeer −1 donut voor '+player.name+'?\n'+message))return;
+    nextData=selected;
+  }else if(action==='save'){
+    const row=button.closest('.admin-player');
+    const threshold=Number(row.querySelector('.admin-threshold').value);
+    const percent=Number(row.querySelector('.admin-percent').value);
+    if(!Number.isInteger(threshold)||threshold<1||threshold>999||!Number.isInteger(percent)||percent<0||percent>100){
+      adminSetStatus('Vul hele getallen in: vanaf 1–999 donuts en korting 0–100%.',true);return;
+    }
+    nextData={minDonuts:threshold,percent};
+    if(!confirm('Persoonlijke korting voor '+player.name+': '+percent+'% vanaf '+threshold+' openstaande donuts. Dit vervangt vanaf die grens de standaardkorting. Opslaan?'))return;
+  }else if(action==='reset'){
+    if(!player.customDiscount)return;
+    if(!confirm('De persoonlijke korting van '+player.name+' verwijderen en terugzetten op de standaardstaffel?'))return;
+  }else return;
+  adminBusy=true;button.disabled=true;
+  adminSetStatus('Wijziging wordt opgeslagen…');
+  try{
+    if(action==='add'){
+      await addDoc(collection(db,'donuts'),{owner:uid,paid:false,createdAt:serverTimestamp(),addedBy:user.uid});
+    }else if(action==='remove'){
+      await updateDoc(doc(db,'donuts',nextData.id),{voided:true,voidedBy:user.uid,voidedAt:serverTimestamp()});
+    }else if(action==='save'){
+      await updateDoc(doc(db,'players',uid),{customDiscount:nextData});
+    }else if(action==='reset'){
+      await updateDoc(doc(db,'players',uid),{customDiscount:deleteField()});
+    }
+    adminSetStatus('✓ '+player.name+': correctie opgeslagen in Firebase.');
+  }catch(e){
+    adminSetStatus('Opslaan mislukt: '+friendly(e),true);
+  }finally{adminBusy=false;button.disabled=false;}
+});
+
 onAuthStateChanged(auth,async u=>{
-unsubs.forEach(fn=>fn());unsubs=[];user=u;players=[];entries=[];render();
+unsubs.forEach(fn=>fn());unsubs=[];user=u;players=[];entries=[];hide('adminModal');hide('adminVerify');render();
 if(!u)return;
 const profile=await getDoc(doc(db,'players',u.uid)).catch(()=>null);
 if(profile&&!profile.exists()&&!registrationInProgress){const name=prompt('Kies je gamertag (2–24 tekens):','Operator');if(name&&name.trim().length>=2&&name.trim().length<=24){try{await setDoc(doc(db,'players',u.uid),{name:name.trim(),createdAt:serverTimestamp()});}catch(e){alert(friendly(e));}}}
 unsubs.push(onSnapshot(collection(db,'players'),snap=>{players=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
-unsubs.push(onSnapshot(collection(db,'donuts'),snap=>{entries=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
+unsubs.push(onSnapshot(collection(db,'donuts'),snap=>{entries=snap.docs.filter(d=>d.data().voided!==true).map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 });
 render();
 </script></body></html>

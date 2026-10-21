@@ -1,35 +1,96 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function keysOnly(fields) { return request.resource.data.keys().hasOnly(fields) && request.resource.data.keys().hasAll(fields); }
-    match /players/{uid} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.auth.uid == uid
-        && keysOnly(['name', 'createdAt'])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 2
-        && request.resource.data.name.size() <= 24
-        && request.resource.data.createdAt == request.time;
-      allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
-        && request.resource.data.name is string
+    function signedIn() {
+      return request.auth != null;
+    }
+    // A name/email string in client JavaScript is not sufficient. Require
+    // the verified email claim in the Firebase ID token on the server.
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email == 'rjpeetoom@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function keysOnly(fields) {
+      return request.resource.data.keys().hasOnly(fields)
+        && request.resource.data.keys().hasAll(fields);
+    }
+    function validName() {
+      return request.resource.data.name is string
         && request.resource.data.name.size() >= 2
         && request.resource.data.name.size() <= 24;
+    }
+    function validCustomDiscount() {
+      return !request.resource.data.keys().hasAny(['customDiscount'])
+        || (
+          request.resource.data.customDiscount is map
+          && request.resource.data.customDiscount.keys().hasOnly(['minDonuts', 'percent'])
+          && request.resource.data.customDiscount.keys().hasAll(['minDonuts', 'percent'])
+          && request.resource.data.customDiscount.minDonuts is int
+          && request.resource.data.customDiscount.minDonuts >= 1
+          && request.resource.data.customDiscount.minDonuts <= 999
+          && request.resource.data.customDiscount.percent is int
+          && request.resource.data.customDiscount.percent >= 0
+          && request.resource.data.customDiscount.percent <= 100
+        );
+    }
+    match /players/{uid} {
+      allow read: if signedIn();
+      // Players cannot assign themselves an admin discount on signup.
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && keysOnly(['name', 'createdAt'])
+        && validName()
+        && request.resource.data.createdAt == request.time;
+      allow update: if (
+          signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+          && validName()
+        ) || (
+          isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customDiscount'])
+          && validCustomDiscount()
+        );
       allow delete: if false;
     }
     match /donuts/{id} {
       allow read: if signedIn();
       allow create: if signedIn()
-        && keysOnly(['owner', 'paid', 'createdAt'])
-        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.owner is string
         && request.resource.data.paid == false
-        && request.resource.data.createdAt == request.time;
-      allow update: if signedIn()
-        && resource.data.owner == request.auth.uid
-        && resource.data.paid == false
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid'])
-        && request.resource.data.paid == true;
+        && request.resource.data.createdAt == request.time
+        && (
+          (
+            request.resource.data.owner == request.auth.uid
+            && keysOnly(['owner', 'paid', 'createdAt'])
+          )
+          || (
+            isAdmin()
+            && keysOnly(['owner', 'paid', 'createdAt', 'addedBy'])
+            && request.resource.data.addedBy == request.auth.uid
+            && exists(/databases/$(database)/documents/players/$(request.resource.data.owner))
+          )
+        );
+      allow update: if (
+          signedIn()
+          && resource.data.owner == request.auth.uid
+          && resource.data.paid == false
+          && resource.data.get('voided', false) != true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid'])
+          && request.resource.data.paid == true
+        ) || (
+          isAdmin()
+          && resource.data.get('voided', false) != true
+          && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['voided', 'voidedBy', 'voidedAt'])
+          && request.resource.data.diff(resource.data).affectedKeys()
+             .hasAll(['voided', 'voidedBy', 'voidedAt'])
+          && request.resource.data.voided == true
+          && request.resource.data.voidedBy == request.auth.uid
+          && request.resource.data.voidedAt == request.time
+        );
+      // Preserve corrected donut records as an audit trail; never delete them.
       allow delete: if false;
     }
     match /{document=**} {
