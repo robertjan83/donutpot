@@ -56,6 +56,8 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 
 /* Small, scrollable, mobile-friendly admin cockpit */
 .admin-modal{width:min(880px,100%);max-height:min(88dvh,900px);overflow-y:auto;overscroll-behavior:contain}
+.admin-modal button{width:auto;margin-top:0}
+.admin-modal .admin-discount input{margin:0}
 .admin-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
 .admin-heading h2{margin:0 0 8px}
 .admin-notice{margin:12px 0;color:#b9ecd0;font-size:.86rem;line-height:1.5}
@@ -315,7 +317,6 @@ $('adminPlayers').addEventListener('click',async event=>{
   if(!player)return;
   const all=entries.filter(e=>e.owner===uid);
   const unpaid=all.filter(e=>!e.paid);
-  const previous=owedCents(unpaid.length,uid);
   let nextData=null;
   if(action==='add'){
     if(!confirm('Corrigeer +1 donut voor '+player.name+'? Openstaand bedrag wordt opnieuw berekend.'))return;
