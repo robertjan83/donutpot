@@ -34,6 +34,44 @@ service cloud.firestore {
           && request.resource.data.customDiscount.percent <= 100
         );
     }
+    function validBirthday() {
+      return !request.resource.data.keys().hasAny(['birthday'])
+        || (
+          request.resource.data.birthday is map
+          && request.resource.data.birthday.keys().hasOnly(['month', 'day'])
+          && request.resource.data.birthday.keys().hasAll(['month', 'day'])
+          && request.resource.data.birthday.month is int
+          && request.resource.data.birthday.day is int
+          && request.resource.data.birthday.month >= 1
+          && request.resource.data.birthday.month <= 12
+          && request.resource.data.birthday.day >= 1
+          && request.resource.data.birthday.day <= 31
+          && (request.resource.data.birthday.month != 2 || request.resource.data.birthday.day <= 29)
+          && (!(request.resource.data.birthday.month in [4, 6, 9, 11]) || request.resource.data.birthday.day <= 30)
+        );
+    }
+    match /offers/{id} {
+      allow read: if signedIn();
+      allow create: if isAdmin()
+        && keysOnly(['owner', 'startMs', 'endMs', 'maxDonuts', 'percent', 'createdAt', 'createdBy'])
+        && request.resource.data.owner is string
+        && exists(/databases/$(database)/documents/players/$(request.resource.data.owner))
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.startMs is int
+        && request.resource.data.endMs is int
+        && request.resource.data.startMs > 0
+        && request.resource.data.endMs > request.resource.data.startMs
+        && request.resource.data.endMs - request.resource.data.startMs <= 365 * 86400000
+        && request.resource.data.maxDonuts is int
+        && request.resource.data.maxDonuts >= 1
+        && request.resource.data.maxDonuts <= 999
+        && request.resource.data.percent is int
+        && request.resource.data.percent >= 0
+        && request.resource.data.percent <= 100;
+      // Immutable promotions: a past earned reduction cannot be erased.
+      allow update, delete: if false;
+    }
     match /players/{uid} {
       allow read: if signedIn();
       // Players cannot assign themselves an admin discount on signup.
@@ -49,8 +87,9 @@ service cloud.firestore {
           && validName()
         ) || (
           isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customDiscount'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customDiscount', 'birthday'])
           && validCustomDiscount()
+          && validBirthday()
         );
       allow delete: if false;
     }

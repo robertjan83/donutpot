@@ -77,13 +77,21 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 .admin-discount-note{font-size:.79rem;line-height:1.45;color:#e2a6c1;margin-top:10px}
 .admin-discount button:disabled,.admin-edit button:disabled{opacity:.5;cursor:wait}
 @media(max-width:700px){.admin-modal{max-height:90dvh;padding:18px}.admin-player{padding:13px}.admin-discount label{flex:1 1 100px}.admin-discount button{flex:1 1 95px}}
+
+.admin-section{border-top:1px solid #344050;padding-top:14px;margin-top:16px}
+.admin-section strong{display:block;color:#ffaccb}
+.admin-section p{margin:7px 0 0;color:#c3ccd4;font-size:.81rem;line-height:1.5}
+.admin-section .admin-discount{margin-top:10px;border-top:0;padding-top:0}
+.offer-history{margin-top:10px;color:#c3cbd4;font-size:.78rem;line-height:1.65}
+.offer-notice{margin:10px 0;color:#ffc0d8;font-size:.87rem;line-height:1.6;font-weight:600}
+.offer-notice:empty{display:none}
 </style></head><body>
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
 <header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini" id="soundBtn" type="button" title="Geluid aan- of uitzetten" aria-pressed="true">🔊 Geluid aan</button><button class="secondary mini hidden" id="adminBtn" type="button">⚙️ Admin</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
 <section class="hero"><div><p class="eyebrow">// OPERATION: ZERO KILLS</p><h1>NO KILLS.<br><span>JUST DONUTS.</span></h1><p class="muted">Een Call of Duty-potje met <strong>0 kills</strong>? Registreer zelf een donut. Iedere donut kost <strong>€ 1</strong>. Betaal meteen of laat de schuld oplopen.</p><div class="buttons"><button id="addBtn" type="button" class="donut-action"><span class="donut-cta-copy"><small>0 KILLS GESPEELD?</small><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button><a class="tikkie-link" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer">BETAAL VIA TIKKIE ↗</a></div><div class="hint">Betalen gaat via Tikkie. Je markeert zelf of je betaling is gedaan.</div></div><div class="donut" aria-hidden="true">🍩</div></section>
 <div class="stats"><div class="stat"><label>TOTAAL DONUTWAARDE</label><b id="total">€ 0</b><small>Alle geregistreerde donuts</small></div><div class="stat"><label>OPENSTAAND BIJ SQUAD</label><b id="open">€ 0,00</b><small>Na de kortingen per speler</small></div><div class="stat"><label>DONUTS · SPELERS</label><b id="counts">0 · 0</b><small>Zero-kill games</small></div></div>
-<section class="balance" aria-labelledby="balanceTitle"><div class="balance-header"><div><strong id="balanceTitle">💸 MIJN DONUTSCHULD</strong><p class="muted" id="myBalance">Log in om je openstaande donuts te zien.</p></div><div id="myDue" class="balance-total">€ 0,00</div></div><p id="discountBreakdown" class="discount-breakdown" aria-live="polite"></p><div id="paymentActions" class="payment-actions hidden"><a id="settleLink" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer" class="pay-link"><span>1. BETAAL VIA TIKKIE ↗</span><small id="amountToPay">Te betalen: € 0,00</small></a><button id="settleBtn" type="button" class="paid-confirm"><span>2. IK HEB BETAALD ✓</span><small>Schuld aflossen en op € 0 zetten</small></button><p class="payment-note">Vul bij Tikkie het hierboven berekende bedrag <strong>na korting</strong> in, als Tikkie een vrij bedrag toestaat. Keer na de betaling terug en druk op <strong>Ik heb betaald</strong>. De betaling wordt niet automatisch gecontroleerd.</p></div><p id="paymentMessage" class="payment-message" role="status" aria-live="polite"></p><p class="tikkie-expiry">Tikkie geldig t/m 2 november 2026.</p></section>
+<section class="balance" aria-labelledby="balanceTitle"><div class="balance-header"><div><strong id="balanceTitle">💸 MIJN DONUTSCHULD</strong><p class="muted" id="myBalance">Log in om je openstaande donuts te zien.</p></div><div id="myDue" class="balance-total">€ 0,00</div></div><p id="discountBreakdown" class="discount-breakdown" aria-live="polite"></p><p id="specialOfferInfo" class="offer-notice" aria-live="polite"></p><div id="paymentActions" class="payment-actions hidden"><a id="settleLink" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer" class="pay-link"><span>1. BETAAL VIA TIKKIE ↗</span><small id="amountToPay">Te betalen: € 0,00</small></a><button id="settleBtn" type="button" class="paid-confirm"><span>2. IK HEB BETAALD ✓</span><small>Schuld aflossen en op € 0 zetten</small></button><p class="payment-note">Vul bij Tikkie het hierboven berekende bedrag <strong>na korting</strong> in, als Tikkie een vrij bedrag toestaat. Keer na de betaling terug en druk op <strong>Ik heb betaald</strong>. De betaling wordt niet automatisch gecontroleerd.</p></div><p id="paymentMessage" class="payment-message" role="status" aria-live="polite"></p><p class="tikkie-expiry">Tikkie geldig t/m 2 november 2026.</p></section>
 <div class="columns"><section class="panel"><p class="eyebrow">// HALL OF SHAME</p><h2>🍩 DONUT RANGLIJST</h2><div id="leaderboard"></div></section><section class="panel"><p class="eyebrow">// LATEST CASUALTIES</p><h2>RECENTE DONUTS</h2><div id="activity"></div></section></div>
 <footer class="footerline"><span>Onofficiële fanwebsite, niet verbonden aan Activision of Call of Duty.</span><span>ZERO KILLS. NO EXCUSES. 🍩 <a class="easter-link" href="./speaky-bingo.html" title="Geheime squad-missie" aria-label="Geheime squad-missie: Speaky Bingo">psst... 👀</a></span></footer><button type="button" id="mobileAddBtn" class="donut-action mobile-donut-cta" aria-label="Donut toevoegen, 0 kills, 1 euro"><span class="donut-cta-copy"><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button></div>
 <section class="pwa-install-banner hidden" id="pwaInstallBanner" aria-label="DONUT OPS installeren" role="region">
@@ -111,13 +119,14 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 <script src="./pwa.js" defer></script>
 <script src="./donut-sound.js" defer></script>
 <script type="module">
+import {calculateDebt,birthdayWeek,validBirthday,offerValid,offerUsed} from './offer-pricing.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendEmailVerification,reload} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,collection,doc,setDoc,getDoc,onSnapshot,addDoc,updateDoc,serverTimestamp,writeBatch,deleteField} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyBiLwy_7E4CyXNNBJaJnxy69VPxd10Hpto",authDomain:"donutpot-b1863.firebaseapp.com",projectId:"donutpot-b1863",storageBucket:"donutpot-b1863.firebasestorage.app",messagingSenderId:"290581669700",appId:"1:290581669700:web:c850a763a9604effe79911"});
 const auth=getAuth(app),db=getFirestore(app),TIKKIE='https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90',PASSWORD='donutpot';
 const $=id=>document.getElementById(id);
-let user=null,players=[],entries=[],registerMode=false,registrationInProgress=false,unsubs=[],adminBusy=false;
+let user=null,players=[],entries=[],offers=[],registerMode=false,registrationInProgress=false,unsubs=[],adminBusy=false;
 const ADMIN_EMAIL='rjpeetoom@gmail.com';
 const adminCandidate=()=>user?.email?.toLowerCase()===ADMIN_EMAIL;
 const isAdmin=()=>Boolean(adminCandidate()&&user.emailVerified);
@@ -138,14 +147,15 @@ function discountPct(count,owner){
     && count>=custom.minDonuts)return custom.percent;
   return standardDiscountPct(count);
 }
-const owedCents=(count,owner)=>count*(100-discountPct(count,owner));
+const owedCents=(count,owner)=>calculateDebt(entries,players,offers,owner,discountPct(count,owner)).cents;
 const euros=cents=>euroFormatter.format(cents/100);
 function render(){
 const unpaid=entries.filter(e=>!e.paid),mine=entries.filter(e=>e.owner===user?.uid),due=mine.filter(e=>!e.paid).length;
 const perPlayer=new Map();
 for(const entry of unpaid)perPlayer.set(entry.owner,(perPlayer.get(entry.owner)||0)+1);
 const squadDueCents=[...perPlayer.entries()].reduce((sum,[owner,count])=>sum+owedCents(count,owner),0);
-const myDueCents=owedCents(due,user?.uid),discount=discountPct(due,user?.uid);
+const discount=discountPct(due,user?.uid);
+const myDebt=calculateDebt(entries,players,offers,user?.uid,discount),myDueCents=myDebt.cents;
 $('adminBtn').classList.toggle('hidden',!adminCandidate());
 $('adminBtn').textContent=isAdmin()?'⚙️ Admin':'🔐 Admin activeren';
 $('total').textContent=euros(entries.length*100);$('open').textContent=euros(squadDueCents);$('counts').textContent=entries.length+' · '+players.length;
@@ -155,16 +165,22 @@ $('myDue').textContent=euros(myDueCents);
 $('paymentActions').classList.toggle('hidden',!user||!due);
 $('amountToPay').textContent='Te betalen: '+euros(myDueCents)+' ('+due+' donut'+(due===1?'':'s')+')';
 if(!user||!due){$('discountBreakdown').textContent='';}
-else if(discount){
-const saved=due*100-myDueCents;
-const custom=me()?.customDiscount;
-const hasCustom=custom&&due>=custom.minDonuts;
-$('discountBreakdown').textContent=due+' donuts × € 1,00 = '+euros(due*100)+' · '+discount+'% '+(hasCustom?'persoonlijke korting':'korting')+' (−'+euros(saved)+')'+(!hasCustom&&discount===10?' · Vanaf 10 donuts 15% korting.':'');
-}else{
-const custom=me()?.customDiscount;
-$('discountBreakdown').textContent=due+' donuts × € 1,00 · '+(custom&&due<custom.minDonuts?'Persoonlijke korting van '+custom.percent+'% vanaf '+custom.minDonuts+' donuts.':'Nog '+(5-due)+' donut'+(5-due===1?'':'s')+' tot 10% korting.');
+else{
+const parts=[due+' donuts × € 1,00 = '+euros(myDebt.gross)];
+if(discount)parts.push(discount+'% standaard/persoonlijke staffel');
+if(myDebt.extra)parts.push(myDebt.extra+' actie-/verjaardagsdonut'+(myDebt.extra===1?'':'s')+' met extra korting');
+parts.push('totaal korting −'+euros(myDebt.saved));
+$('discountBreakdown').textContent=parts.join(' · ');
 }
 $('paymentMessage').textContent=user&&!due?'✅ Alles afgelost! Je donutschuld is € 0,00.':'';
+const promoInfo=[];
+if(user&&birthdayWeek(Date.now(),me()?.birthday))promoInfo.push('🎂 Verjaardagsweek: 20% op donuts die deze week geregistreerd worden.');
+for(const offer of offers){
+ if(offer.owner!==user?.uid||!offerValid(offer)||Date.now()<offer.startMs||Date.now()>=offer.endMs)continue;
+ const left=Math.max(0,offer.maxDonuts-offerUsed(offer,entries));
+ if(left)promoInfo.push('🎁 '+offer.percent+'% actie: nog '+left+' van '+offer.maxDonuts+' donuts beschikbaar tot '+new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',dateStyle:'short',timeStyle:'short'}).format(offer.endMs)+'.');
+}
+$('specialOfferInfo').textContent=promoInfo.join(' ');
 const ordered=[...players].sort((a,b)=>entries.filter(e=>e.owner===b.id).length-entries.filter(e=>e.owner===a.id).length);
 $('leaderboard').innerHTML=ordered.length?ordered.map((p,i)=>{const matches=entries.filter(e=>e.owner===p.id),open=matches.filter(e=>!e.paid).length;return '<div class="line"><div class="rank">'+(i+1)+'</div><div class="avatar">'+esc(p.name[0]?.toUpperCase()||'?')+'</div><div class="who"><strong>'+esc(p.name)+'</strong><small>'+matches.length+' donuts totaal</small></div><div class="amount">'+matches.length+' 🍩<small>'+euros(owedCents(open,p.id))+' open'+(discountPct(open,p.id)?' · '+discountPct(open,p.id)+'% korting':'')+'</small></div></div>';}).join(''):'<p class="muted">Nog geen spelers.</p>';
 // Tel alle daadwerkelijk als betaald gemarkeerde donuts per speler.
@@ -183,7 +199,7 @@ $('activity').innerHTML=entries.length?[...entries]
       esc(players.find(p=>p.id===e.owner)?.name||'Operator')+
       '</strong><small>'+date(e.createdAt)+'</small><small class="activity-paid-count">✓ '+
       paidLabel+'</small></div><div class="amount status">'+
-      (e.paid?'BETAALD ✓':'€ 1 OPEN')+'</div></div>';
+      (e.paid?'BETAALD ✓':'OPEN 🍩')+'</div></div>';
   }).join(''):'<p class="muted">Nog geen donuts geregistreerd.</p>';
 if(isAdmin()&&!$('adminModal').classList.contains('hidden'))renderAdmin();
 }
@@ -280,7 +296,22 @@ function renderAdmin(){
     '<label>Persoonlijke korting (%)<input class="admin-percent" type="number" inputmode="numeric" min="0" max="100" step="1" value="'+(custom?custom.percent:10)+'"></label>'+
     '<button type="button" data-action="save" data-uid="'+esc(p.id)+'">Opslaan</button>'+
     '<button type="button" data-action="reset" data-uid="'+esc(p.id)+'" class="secondary" '+(!custom?'disabled':'')+'>Standaard</button></div>'+
-    '<p class="admin-discount-note">'+esc(detail)+'</p></section>';
+    '<p class="admin-discount-note">'+esc(detail)+'</p>'+ '<div class="admin-section"><strong>🎂 Verjaardag</strong><p>20% korting in de verjaardagsweek (maandag–zondag). Alleen dag en maand worden opgeslagen.</p>'+
+'<div class="admin-discount"><label>Dag<input class="birthday-day" type="number" min="1" max="31" step="1" placeholder="Dag" value="'+(p.birthday?.day||'')+'"></label>'+
+'<label>Maand<input class="birthday-month" type="number" min="1" max="12" step="1" placeholder="Maand" value="'+(p.birthday?.month||'')+'"></label>'+
+'<button data-action="birthday-save" data-uid="'+esc(p.id)+'" type="button">Verjaardag opslaan</button>'+
+'<button data-action="birthday-clear" data-uid="'+esc(p.id)+'" type="button" class="secondary" '+(!p.birthday?'disabled':'')+'>Wissen</button></div></div>'+
+'<div class="admin-section"><strong>🎁 Tijdelijke actie</strong><p>Start direct: maximaal X donuts gedurende X dagen met X% korting. Verdiende kortingen blijven geldig na afloop.</p>'+
+'<div class="admin-discount"><label>Dagen<input class="offer-days" type="number" min="1" max="365" step="1" value="2"></label>'+
+'<label>Max. donuts<input class="offer-limit" type="number" min="1" max="999" step="1" value="3"></label>'+
+'<label>Korting (%)<input class="offer-percent" type="number" min="0" max="100" step="1" value="20"></label>'+
+'<button data-action="offer-create" data-uid="'+esc(p.id)+'" type="button">Start actie</button></div>'+
+'<div class="offer-history">'+([ ...offers ].filter(o=>o.owner===p.id).sort((a,b)=>b.startMs-a.startMs).slice(0,4).map(o=>{
+ const used=Math.min(offerUsed(o,entries),o.maxDonuts),now=Date.now();
+ const status=now>=o.endMs?'Afgelopen':used>=o.maxDonuts?'Vol':'Actief';
+ const dateFmt=new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',dateStyle:'short',timeStyle:'short'});
+ return '<div>🎁 '+o.percent+'% · '+used+'/'+o.maxDonuts+' donuts · '+status+' · '+dateFmt.format(o.startMs)+' – '+dateFmt.format(o.endMs)+'</div>';
+}).join('')||'Nog geen acties')+'</div></div>'+'</section>';
   }).join(''):'<p class="muted">Er zijn nog geen spelers.</p>';
 }
 $('adminBtn').onclick=()=>{
@@ -318,7 +349,25 @@ $('adminPlayers').addEventListener('click',async event=>{
   const all=entries.filter(e=>e.owner===uid);
   const unpaid=all.filter(e=>!e.paid);
   let nextData=null;
-  if(action==='add'){
+  const row=button.closest('.admin-player');
+  if(action==='birthday-save'){
+    const day=Number(row.querySelector('.birthday-day').value),month=Number(row.querySelector('.birthday-month').value);
+    if(!validBirthday(month,day)){adminSetStatus('Vul een bestaande dag en maand in.',true);return;}
+    nextData={month,day};
+    if(!confirm('Verjaardag van '+player.name+': '+day+'-'+month+'? In de verjaardagsweek automatisch 20% korting.'))return;
+  }else if(action==='birthday-clear'){
+    if(!player.birthday||!confirm('Verjaardag van '+player.name+' verwijderen?'))return;
+  }else if(action==='offer-create'){
+    const days=Number(row.querySelector('.offer-days').value);
+    const maxDonuts=Number(row.querySelector('.offer-limit').value);
+    const percent=Number(row.querySelector('.offer-percent').value);
+    if(!Number.isInteger(days)||days<1||days>365||!Number.isInteger(maxDonuts)||maxDonuts<1||maxDonuts>999||!Number.isInteger(percent)||percent<0||percent>100){
+      adminSetStatus('Gebruik hele getallen: 1–365 dagen, 1–999 donuts en 0–100% korting.',true);return;
+    }
+    const startMs=Date.now()-5000;
+    nextData={owner:uid,startMs,endMs:startMs+days*86400000,maxDonuts,percent};
+    if(!confirm('Nu voor '+player.name+' een actie starten? '+days+' dag(en), max. '+maxDonuts+' donuts met '+percent+'% korting.'))return;
+  }else if(action==='add'){
     if(!confirm('Corrigeer +1 donut voor '+player.name+'? Openstaand bedrag wordt opnieuw berekend.'))return;
   }else if(action==='remove'){
     if(!all.length)return;
@@ -329,7 +378,6 @@ $('adminPlayers').addEventListener('click',async event=>{
     if(!confirm('Corrigeer −1 donut voor '+player.name+'?\n'+message))return;
     nextData=selected;
   }else if(action==='save'){
-    const row=button.closest('.admin-player');
     const threshold=Number(row.querySelector('.admin-threshold').value);
     const percent=Number(row.querySelector('.admin-percent').value);
     if(!Number.isInteger(threshold)||threshold<1||threshold>999||!Number.isInteger(percent)||percent<0||percent>100){
@@ -344,7 +392,13 @@ $('adminPlayers').addEventListener('click',async event=>{
   adminBusy=true;button.disabled=true;
   adminSetStatus('Wijziging wordt opgeslagen…');
   try{
-    if(action==='add'){
+    if(action==='birthday-save'){
+      await updateDoc(doc(db,'players',uid),{birthday:nextData});
+    }else if(action==='birthday-clear'){
+      await updateDoc(doc(db,'players',uid),{birthday:deleteField()});
+    }else if(action==='offer-create'){
+      await addDoc(collection(db,'offers'),{...nextData,createdBy:user.uid,createdAt:serverTimestamp()});
+    }else if(action==='add'){
       await addDoc(collection(db,'donuts'),{owner:uid,paid:false,createdAt:serverTimestamp(),addedBy:user.uid});
     }else if(action==='remove'){
       await updateDoc(doc(db,'donuts',nextData.id),{voided:true,voidedBy:user.uid,voidedAt:serverTimestamp()});
@@ -360,12 +414,13 @@ $('adminPlayers').addEventListener('click',async event=>{
 });
 
 onAuthStateChanged(auth,async u=>{
-unsubs.forEach(fn=>fn());unsubs=[];user=u;players=[];entries=[];hide('adminModal');hide('adminVerify');render();
+unsubs.forEach(fn=>fn());unsubs=[];user=u;players=[];entries=[];offers=[];hide('adminModal');hide('adminVerify');render();
 if(!u)return;
 const profile=await getDoc(doc(db,'players',u.uid)).catch(()=>null);
 if(profile&&!profile.exists()&&!registrationInProgress){const name=prompt('Kies je gamertag (2–24 tekens):','Operator');if(name&&name.trim().length>=2&&name.trim().length<=24){try{await setDoc(doc(db,'players',u.uid),{name:name.trim(),createdAt:serverTimestamp()});}catch(e){alert(friendly(e));}}}
 unsubs.push(onSnapshot(collection(db,'players'),snap=>{players=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 unsubs.push(onSnapshot(collection(db,'donuts'),snap=>{entries=snap.docs.filter(d=>d.data().voided!==true).map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
+unsubs.push(onSnapshot(collection(db,'offers'),snap=>{offers=snap.docs.map(d=>({id:d.id,...d.data()}));render();},e=>alert(friendly(e))));
 });
 render();
 </script></body></html>

@@ -38,3 +38,14 @@ Elke ingelogde gebruiker kan elke andere speler zien en zelf zijn eigen openstaa
 - Klik **Standaard** om de persoonlijke korting volledig te verwijderen (standaardstaffel 5–9: 10%, vanaf 10: 15%).
 - Deze wijzigingen veranderen automatisch de schuld, squad-totalen, ranglijstbedragen en het bedrag dat bij Tikkie getoond wordt. Tikkie zelf leest deze bedragen niet automatisch.
 - Adminacties zijn beschermd door server-side Firestore-regels met **exact e-mailadres + geverifieerde e-mailclaim**; wijziging van de knop in de browser verleent geen privileges.
+
+## Tijdelijke acties en verjaardagskorting
+
+- Via de verified-email admin (`rjpeetoom@gmail.com`) kun je per speler een **tijdelijke actie vanaf nu** starten: 1–365 dagen, 1–999 donuts, 0–100% korting. Bijvoorbeeld 3 donuts gedurende 2 dagen met 30% korting.
+- De korting geldt voor de **eerste X in die periode geregistreerde donuts**. Betaalde donuts tellen voor de actielimiet mee, foutief geregistreerde/gecorrigeerde donuts niet.
+- De actieperiodes zijn onveranderlijk vastgelegd in een aparte `offers`-collectie. Ook na het verstrijken van de eindtijd blijft een eerder verkregen korting op openstaande donuts geldig.
+- Admin kan per speler een verjaardag (uitsluitend dag en maand) opslaan. **20% korting** op alle donuts geregistreerd in de verjaardagsweek, van maandag 00:00 t/m zondag 23:59 in **Europe/Amsterdam**. In niet-schrikkeljaren valt een verjaardag op 29 februari in de week van 28 februari.
+- Korting wordt **per donut** bepaald. De bestaande standaardstaffel (5–9 open = 10%, 10+ open = 15%) of oude persoonlijke staffel geldt als basis voor alle openstaande donuts. De verjaardags- of actiepercentages kunnen de korting op betreffende donuts verhogen: het **hoogste percentage** geldt, nooit stapeling. De getoonde schuld en groepsschuld zijn netto.
+- De Tikkie-link vult de prijs niet zelf in. De speler betaalt het berekende bedrag en markeert na geslaagde betaling zelf zijn openstaande donuts als betaald.
+- Omdat de prijs per donut uit de registratiedatum en de onveranderlijke actiegegevens wordt berekend, verandert die actiekorting niet wanneer de actie verloopt. Het opnieuw instellen van een verjaardag kan wel de weergave van historische, nog openstaande verjaardagsdonuts beïnvloeden; wijzig geboortedata daarom alleen ter correctie.
+- **Firestore Rules publiceren is verplicht** na deze update: de bijgewerkte `firestore.rules` staan in GitHub; kopieer naar Firebase Console → Firestore Database → Rules → Publish. Zonder deze stap kan het dashboard geen verjaardagen/acties bewaren en kan de app de nieuwe `offers`-collectie niet uitlezen.
