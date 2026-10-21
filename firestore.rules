@@ -180,32 +180,24 @@ service cloud.firestore {
         && request.resource.data.winningChoice in ['A', 'B', 'C', 'D']
         && request.resource.data.answeredAt == request.time
         && get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer == request.resource.data.winningChoice
-        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.result == 'correct'
-        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.choice == request.resource.data.winningChoice
+        && get(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.owner == request.auth.uid
+        && get(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.choice == request.resource.data.winningChoice
         && getAfter(/databases/$(database)/documents/quizPrizes/$(roundId)).data.owner == request.auth.uid
         && getAfter(/databases/$(database)/documents/quizState/main).data.currentRoundId == resource.data.nextId;
       allow delete: if false;
       match /attempts/{uid} {
         allow get: if signedIn() && request.auth.uid == uid;
         allow list: if false;
+        // Exactly one immutable submitted guess; the hidden answer is checked
+        // only AFTER this document already exists in committed Firestore state.
         allow create: if signedIn() && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['owner','choice','result','answeredAt'])
-          && request.resource.data.keys().hasAll(['owner','choice','result','answeredAt'])
+          && keysOnly(['owner','choice','answeredAt'])
           && request.resource.data.owner == uid
           && request.resource.data.choice in ['A','B','C','D']
           && request.resource.data.answeredAt == request.time
           && get(/databases/$(database)/documents/quizState/main).data.currentRoundId == roundId
           && get(/databases/$(database)/documents/quizRounds/$(roundId)).data.winnerUid == null
-          && request.time.toMillis() >= get(/databases/$(database)/documents/quizRounds/$(roundId)).data.startMs
-          && (
-            (request.resource.data.result == 'wrong'
-              && request.resource.data.choice != get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer)
-            ||
-            (request.resource.data.result == 'correct'
-              && request.resource.data.choice == get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer
-              && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)).data.winnerUid == uid
-              && getAfter(/databases/$(database)/documents/quizPrizes/$(roundId)).data.owner == uid)
-          );
+          && request.time.toMillis() >= get(/databases/$(database)/documents/quizRounds/$(roundId)).data.startMs;
         allow update, delete: if false;
       }
     }
@@ -229,8 +221,8 @@ service cloud.firestore {
         && request.resource.data.awardedAt == request.time
         && request.resource.data.redeemedDonutId == null
         && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)).data.winnerUid == request.auth.uid
-        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.result == 'correct'
-        && getAfter(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.choice ==
+        && get(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.owner == request.auth.uid
+        && get(/databases/$(database)/documents/quizRounds/$(roundId)/attempts/$(request.auth.uid)).data.choice ==
            get(/databases/$(database)/documents/quizAnswers/$(roundId)).data.answer;
       allow update: if signedIn()
         && resource.data.owner == request.auth.uid

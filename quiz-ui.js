@@ -17,6 +17,7 @@ export function installQuiz(auth,db){
  if(!el)throw Error('Quizsection ontbreekt');
  let user=null,game=null,rounds=[],players=[],prizes=[],attempt=null,attemptId=null;
  let stop=[],stopAttempt=null,busy=false,notice='',privateKey='';
+ const attemptedClaim=new Set();
  const admin=()=>user?.email?.toLowerCase()==='rjpeetoom@gmail.com'&&user.emailVerified===true;
  const current=()=>rounds.find(x=>x.id===game?.currentRoundId);
  const name=id=>players.find(p=>p.id===id)?.name||'Speler';
@@ -39,7 +40,7 @@ export function installQuiz(auth,db){
    else if(Date.now()<round.startMs)s+='<p class="quiz-wait">⏳ Er staat een vraag klaar. Hij verschijnt op een willekeurig gepland moment.</p>';
    else{
     s+='<div class="quiz-current"><small>VRAAG '+round.index+' / 25</small><h3>'+safe(q.question)+'</h3>';
-    if(attempt?.round===round.id)s+='<p class="quiz-missed">❌ Helaas, fout. Voor deze vraag kun je niet opnieuw antwoorden. De anderen mogen nog proberen.</p>';
+    if(attempt?.round===round.id)s+='<p class="quiz-missed">📝 Je enige antwoord is vastgelegd. Je kunt niet opnieuw kiezen. Het systeem controleert je poging automatisch.</p>';
     else s+='<div class="quiz-options">'+q.options.map((o,i)=>'<button class="quiz-option" type="button" data-answer="'+('ABCD'[i])+'" '+(busy?'disabled':'')+'><b>'+('ABCD'[i])+'</b> '+safe(o)+'</button>').join('')+'</div>';
     s+='</div>';
    }
@@ -69,32 +70,41 @@ export function installQuiz(auth,db){
    await batch.commit();privateKey='';report('✓ De 25 quizvragen zijn ingepland voor de hele squad.');
   }catch(e){report('Activeren mislukt: '+(e.message||e.code));}finally{busy=false;render();}
  }
+ async function claim(round,answerRef){
+  const stateRef=doc(db,'quizState','main'),roundRef=doc(db,'quizRounds',round.id),prizeRef=doc(db,'quizPrizes',round.id);
+  try{
+   const won=await runTransaction(db,async t=>{
+    // Attempt is already persisted, so an attacker cannot brute-force guesses
+    // by submitting transactions that the server simply rejects.
+    const [state,docRound,attemptDoc]=await Promise.all([t.get(stateRef),t.get(roundRef),t.get(answerRef)]);
+    if(!state.exists()||state.data().currentRoundId!==round.id||!docRound.exists()||docRound.data().winnerUid||!attemptDoc.exists())return false;
+    const choice=attemptDoc.data().choice;
+    t.update(roundRef,{winnerUid:user.uid,winningChoice:choice,answeredAt:serverTimestamp()});
+    t.set(prizeRef,{owner:user.uid,awardedAt:serverTimestamp(),redeemedDonutId:null});
+    t.update(stateRef,{currentRoundId:round.nextId,updatedAt:serverTimestamp()});
+    return true;
+   });
+   if(won){report('🏆 GOED! Jij was de eerste met een bevestigd goed antwoord. Je krijgt 20% korting op de volgende donut!');return true;}
+   report('De vraag is inmiddels door iemand anders gewonnen.');
+  }catch(e){
+   if(e.code==='permission-denied'){report('❌ Helaas, jouw vastgelegde antwoord is fout. Een tweede poging is niet mogelijk.');}
+   else report('Je antwoord is opgeslagen, maar controle lukt even niet: '+(e.message||e.code)+'. Open de pagina opnieuw.');
+  }
+  return false;
+ }
  async function answer(choice){
   if(busy||!user||!game)return;
   const r=current();if(!r||Date.now()<r.startMs||attempt?.round===r.id)return;
   busy=true;render();
-  const sRef=doc(db,'quizState','main'),rRef=doc(db,'quizRounds',r.id);
-  const aRef=doc(db,'quizRounds',r.id,'attempts',user.uid),pRef=doc(db,'quizPrizes',r.id);
+  const aRef=doc(db,'quizRounds',r.id,'attempts',user.uid);
   try{
-   const won=await runTransaction(db,async t=>{
-    const [s,round,old]=await Promise.all([t.get(sRef),t.get(rRef),t.get(aRef)]);
-    if(!s.exists()||s.data().currentRoundId!==r.id||!round.exists()||round.data().winnerUid||old.exists())return false;
-    t.set(aRef,{owner:user.uid,choice,result:'correct',answeredAt:serverTimestamp()});
-    t.update(rRef,{winnerUid:user.uid,winningChoice:choice,answeredAt:serverTimestamp()});
-    t.set(pRef,{owner:user.uid,awardedAt:serverTimestamp(),redeemedDonutId:null});
-    t.update(sRef,{currentRoundId:r.nextId,updatedAt:serverTimestamp()});
-    return true;
-   });
-   report(won?'🏆 JUIST! Jij was de eerste! Je hebt 20% korting op je volgende donut.':'Deze vraag is net door een ander gewonnen.');
+   // Crucial: a guess is committed exactly once BEFORE testing correctness.
+   // No speculative rejected write can be used to probe all four answers.
+   await setDoc(aRef,{owner:user.uid,choice,answeredAt:serverTimestamp()});
+   attempt={round:r.id,choice};
+   await claim(r,aRef);
   }catch(e){
-   if(e.code!=='permission-denied'){report('Antwoord niet verwerkt: '+(e.message||e.code));}
-   else{
-    try{
-     await setDoc(aRef,{owner:user.uid,choice,result:'wrong',answeredAt:serverTimestamp()});
-     attempt={round:r.id,result:'wrong'};
-     report('❌ Helaas fout! Je hebt voor deze vraag geen tweede kans.');
-    }catch(err){report('Een andere speler was je voor. Bekijk de winnaar!');}
-   }
+   report('Antwoord niet vastgelegd: '+(e.message||e.code));
   }finally{busy=false;render();}
  }
  function watchAttempt(){
@@ -102,11 +112,20 @@ export function installQuiz(auth,db){
   if(!user||!r||attemptId===r.id)return;
   if(stopAttempt)stopAttempt();attemptId=r.id;attempt=null;
   stopAttempt=onSnapshot(doc(db,'quizRounds',r.id,'attempts',user.uid),
-    d=>{attempt=d.exists()?{round:r.id,...d.data()}:null;render();},()=>{});
+    d=>{
+      attempt=d.exists()?{round:r.id,...d.data()}:null;
+      render();
+      // Resume a committed answer after the player reopens the PWA.
+      if(attempt&&!busy&&!attemptedClaim.has(r.id)&&game?.currentRoundId===r.id){
+        attemptedClaim.add(r.id);
+        claim(r,doc(db,'quizRounds',r.id,'attempts',user.uid));
+      }
+    },()=>{});
  }
  onAuthStateChanged(auth,u=>{
   stop.forEach(fn=>fn());stop=[];
   if(stopAttempt)stopAttempt();stopAttempt=null;attemptId=null;
+  attemptedClaim.clear();
   user=u;game=null;rounds=[];prizes=[];players=[];attempt=null;notice='';render();
   if(!u)return;
   stop.push(onSnapshot(doc(db,'quizState','main'),d=>{game=d.exists()?d.data():null;watchAttempt();render();},e=>report('Quizstatus niet toegankelijk: '+e.code)));
