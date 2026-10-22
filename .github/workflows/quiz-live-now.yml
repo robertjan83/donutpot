@@ -1,0 +1,37 @@
+name: DONUT OPS - Huidige quizvraag nu live
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/quiz-live-now.yml'
+      - 'scripts/release-current-quiz-once.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: donutops-quiz-manual-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Firebase and push dependencies
+        run: npm install --omit=dev --no-audit --no-fund
+      - name: Make the current unanswered question live
+        run: node scripts/release-current-quiz-once.cjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      - name: Notify subscribed players if a question is live
+        run: node scripts/send-quiz-push.cjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          WEB_PUSH_PRIVATE_KEY: ${{ secrets.WEB_PUSH_PRIVATE_KEY }}
