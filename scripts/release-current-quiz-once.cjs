@@ -5,7 +5,7 @@
  */
 'use strict';
 const admin=require('firebase-admin');
-const MARKER='quizAdminActions/release-2026-10-22-request';
+const MARKER='quizAdminActions/release-2026-10-22-evening-request';
 async function main(){
  const encoded=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
  if(!encoded)throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON ontbreekt.');
