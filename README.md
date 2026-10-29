@@ -104,3 +104,10 @@ Dit is **echte Web Push** (Push API), niet een notificatie die alleen werkt zola
 - De bestaande GitHub Action verstuurt optioneel een **Get Ready-webpush** zodra de huidige gedeelde vraag binnen 30 minuten gaat openen en, apart daarvan, de bestaande **Nieuwe quizvraag**-webpush op of na de start. GitHub draait om de vijf minuten; push kan dus later komen en bezorging is niet gegarandeerd. Iedere fase heeft een aparte Firestore-verzendregistratie in `quizAnnouncements` om dubbelen tegen te gaan.
 - **Bestaande, al geactiveerde quiz:** `scripts/migrate-quiz-schedule.cjs` plant automatisch eenmalig de nog niet geopende rondes opnieuw in bij de eerstvolgende GitHub Action. Vragen die al openstaan en alle reeds gespeelde vragen, pogingen, winnaars en kortingsbonnen blijven ongewijzigd. Eén server-side marker `quizSchedule/windows-2026-v1` verhindert herhaald herschikken. Er is geen nieuwe Firestore Rules-publicatie nodig; de server gebruikt de bestaande serviceaccountrechten.
 - **Voorrang van eerdere vragen:** vraag N+1 verschijnt pas wanneer vraag N goed is beantwoord én het eigen geplande moment is bereikt. Als een vraag onopgelost blijft kunnen latere vragen later worden geopend (desnoods na 3 november). De planning is dan een richtschema, geen gegarandeerde voltooide cyclus.
+
+## Happy Hour (29 oktober 2026, 20:00–23:00 Europe/Amsterdam)
+
+- Zolang het venster loopt: **50% korting op alle nog openstaande donuts** van iedere speler, met banner, bijl-animatie en live aftelling bovenaan de site.
+- Niet stapelbaar: per donut geldt de hoogste korting (staffel, persoonlijke korting, actie, verjaardag, quizprijs of Happy Hour).
+- Om 23:00 verdwijnt de banner automatisch en vervalt de korting op alles wat dan nog niet als betaald is gemarkeerd. Al betaalde donuts houden hun vastgelegde nettobedrag.
+- Het venster staat vast in `HAPPY_HOUR` in `offer-pricing.js`; er zijn geen Firestore-wijzigingen of nieuwe rules nodig.

@@ -19,6 +19,12 @@ export function birthdayWeek(ms,birth){
  }
  return false;
 }
+// Happy Hour: 50% op alle nog openstaande donuts van iedere speler, alleen
+// zolang het venster loopt. Daarna vervalt de korting op onbetaalde donuts
+// automatisch (al betaalde donuts houden hun vastgelegde bedrag).
+// Vensters in UTC: 29-10-2026 20:00-23:00 Europe/Amsterdam (CET).
+export const HAPPY_HOUR={percent:50,startMs:Date.UTC(2026,9,29,19,0),endMs:Date.UTC(2026,9,29,22,0)};
+export const happyHourActive=(nowMs=Date.now())=>nowMs>=HAPPY_HOUR.startMs&&nowMs<HAPPY_HOUR.endMs;
 export const offerValid=o=>o&&Number.isInteger(o.startMs)&&Number.isInteger(o.endMs)&&
  o.endMs>o.startMs&&Number.isInteger(o.maxDonuts)&&o.maxDonuts>=1&&
  Number.isInteger(o.percent)&&o.percent>=0&&o.percent<=100;
@@ -43,12 +49,18 @@ export function promotionRates(entries,players,offers,nowMs=Date.now()){
    if(!prev||o.percent>prev.percent)rates.set(e.id,{percent:o.percent,kind:'actie'});
   }
  }
+ if(happyHourActive(nowMs)){
+  for(const e of entries){
+   const prev=rates.get(e.id);
+   if(!prev||HAPPY_HOUR.percent>prev.percent)rates.set(e.id,{percent:HAPPY_HOUR.percent,kind:'happyhour'});
+  }
+ }
  return rates;
 }
 export function calculateDebt(entries,players,offers,owner,basePercent,nowMs=Date.now()){
  const outstanding=entries.filter(e=>e.owner===owner&&!e.paid);
  const rates=promotionRates(entries,players,offers,nowMs);
- let cents=0,extra=0,birthdays=0,actions=0,quizCount=0;
+ let cents=0,extra=0,birthdays=0,actions=0,happyHour=0,quizCount=0;
  const lineItems=[];
  for(const d of outstanding){
   const promo=rates.get(d.id);
@@ -57,7 +69,7 @@ export function calculateDebt(entries,players,offers,owner,basePercent,nowMs=Dat
   cents+=lineCents;
   lineItems.push({id:d.id,cents:lineCents,discountPct:pct});
   if(d.quizPrizeRound&&pct===20&&20>basePercent&&20>(promo?.percent??0))quizCount++;
-  if(promo&&promo.percent>basePercent){extra++;if(promo.kind==='verjaardag')birthdays++;else actions++;}
+  if(promo&&promo.percent>basePercent){extra++;if(promo.kind==='verjaardag')birthdays++;else if(promo.kind==='happyhour')happyHour++;else actions++;}
  }
- return {count:outstanding.length,cents,gross:outstanding.length*100,saved:outstanding.length*100-cents,extra,birthdays,actions,quizCount,lineItems};
+ return {count:outstanding.length,cents,gross:outstanding.length*100,saved:outstanding.length*100-cents,extra,birthdays,actions,happyHour,quizCount,lineItems};
 }

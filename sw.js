@@ -1,5 +1,5 @@
 /* DONUT OPS: online-first shell, offline info page */
-const CACHE_NAME = 'donutops-pwa-v10';
+const CACHE_NAME = 'donutops-pwa-v11';
 const PRECACHE = ['./offline.html','./manifest.webmanifest','./pwa.js','./quiz-ui.js','./quiz-schedule.mjs','./push-client.js','./quiz-questions.js','./offer-pricing.js','./donut-sound.js','./sounds/donut-cartoon.mp3','./sounds/donut-voices.mp3','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
   // A new worker refreshes its cached files from the network, instead of

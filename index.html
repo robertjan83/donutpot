@@ -123,11 +123,29 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 .ledger-note:empty{display:none}
 .stats .stat b{font-size:clamp(1.4rem,2.4vw,2.25rem);overflow-wrap:anywhere}
 @media(min-width:701px) and (max-width:1030px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.happy-hour{position:relative;overflow:hidden;display:grid;grid-template-columns:1.25fr .75fr;gap:18px;align-items:center;margin:22px 0 0;padding:22px 24px;border-radius:20px;border:1px solid #ff9a62;background:radial-gradient(circle at 85% 50%,#ff7a3d33 0%,transparent 55%),linear-gradient(135deg,#3a1f15,#1f1513);box-shadow:0 0 40px #ff8c4626}.happy-hour-tag{display:inline-flex;align-items:center;gap:8px;font-weight:900;letter-spacing:.16em;font-size:.74rem;color:#ffb187;margin-bottom:10px}.happy-hour-tag i{width:8px;height:8px;border-radius:50%;background:#ff7a3d;box-shadow:0 0 0 0 #ff7a3d;animation:hhPulse 1.4s infinite}.happy-hour h2{margin:0 0 8px;font-size:clamp(1.35rem,4vw,2rem);line-height:1.1;letter-spacing:-.02em}.happy-hour h2 b{color:#ffb187}.happy-hour p{margin:.35rem 0;color:#f5ddd1;line-height:1.5;font-size:.92rem}.happy-hour-timer{display:inline-block;margin-top:10px;padding:8px 12px;border-radius:10px;background:#0d101599;border:1px solid #ff9a6255;font-weight:900;font-variant-numeric:tabular-nums;color:#ffd2b8}.hh-anim{width:100%;max-width:260px;justify-self:center;overflow:visible}
+.hh-axe{transform-box:view-box;transform-origin:216px 182px;animation:hhAxe 2.6s cubic-bezier(.5,0,.3,1) infinite}.hh-left{transform-box:view-box;transform-origin:120px 150px;animation:hhLeft 2.6s ease-out infinite}.hh-right{transform-box:view-box;transform-origin:120px 150px;animation:hhRight 2.6s ease-out infinite}.hh-crumbs{opacity:0;animation:hhCrumbs 2.6s ease-out infinite}.hh-flash{opacity:0;transform-box:fill-box;transform-origin:center;animation:hhFlash 2.6s ease-out infinite}.hh-stamp{opacity:0;transform-box:fill-box;transform-origin:center;animation:hhStamp 2.6s ease-out infinite}
+@keyframes hhAxe{0%,12%{transform:rotate(38deg)}30%{transform:rotate(0)}34%{transform:rotate(3deg)}38%,70%{transform:rotate(0)}100%{transform:rotate(38deg)}}
+@keyframes hhLeft{0%,29%{transform:none}42%{transform:translate(-20px,6px) rotate(-14deg)}84%{transform:translate(-20px,6px) rotate(-14deg)}100%{transform:none}}
+@keyframes hhRight{0%,29%{transform:none}42%{transform:translate(20px,6px) rotate(14deg)}84%{transform:translate(20px,6px) rotate(14deg)}100%{transform:none}}
+@keyframes hhCrumbs{0%,29%{opacity:0;transform:translateY(0)}34%{opacity:1}60%{opacity:0;transform:translateY(26px)}100%{opacity:0}}
+@keyframes hhFlash{0%,28%{opacity:0;transform:scale(.4)}31%{opacity:1;transform:scale(1)}40%,100%{opacity:0;transform:scale(1.4)}}
+@keyframes hhStamp{0%,36%{opacity:0;transform:scale(2.2) rotate(-14deg)}44%{opacity:1;transform:scale(1) rotate(-10deg)}80%{opacity:1;transform:scale(1) rotate(-10deg)}92%,100%{opacity:0;transform:scale(1) rotate(-10deg)}}
+@keyframes hhPulse{0%{box-shadow:0 0 0 0 #ff7a3daa}70%{box-shadow:0 0 0 9px #ff7a3d00}100%{box-shadow:0 0 0 0 #ff7a3d00}}
+@media(max-width:700px){.happy-hour{grid-template-columns:1fr;padding:18px}.hh-anim{max-width:200px;grid-row:1}}
+@media(prefers-reduced-motion:reduce){.hh-axe,.hh-left,.hh-right,.hh-crumbs,.hh-flash,.hh-stamp,.happy-hour-tag i{animation:none}.hh-axe{transform:none}.hh-left{transform:translate(-20px,6px) rotate(-14deg)}.hh-right{transform:translate(20px,6px) rotate(14deg)}.hh-stamp{opacity:1;transform:rotate(-10deg)}}
 </style></head><body>
 <div id="gate" class="overlay"><form class="modal" id="gateForm"><div style="font-size:5rem">🍩</div><p class="eyebrow">RESTRICTED SQUAD ACCESS</p><h2>DONUT <span class="pink">OPS</span></h2><p class="muted">0 kills? 1 euro. No excuses.</p><label for="secret">SQUAD WACHTWOORD</label><input type="password" id="secret" required autocomplete="off" placeholder="Wachtwoord"><p class="error" id="gateError"></p><button>ENTER THE SQUAD ↗</button></form></div>
 <div id="app" class="wrap hidden">
 <header><div><strong>🍩 DONUT<span class="pink">OPS</span></strong><small>CALL OF DUTY · ZERO KILLS CLUB</small></div><div class="top-buttons"><button class="secondary mini hidden" id="pwaInstallBtn" type="button">📲 Installeer</button><button class="secondary mini hidden" id="quizPushBtn" type="button" aria-pressed="false">🔕 Quizmeldingen aanzetten</button><button class="secondary mini" id="soundBtn" type="button" title="Geluid aan- of uitzetten" aria-pressed="true">🔊 Geluid aan</button><button class="secondary mini hidden" id="adminBtn" type="button">⚙️ Admin</button><button class="secondary mini" id="userBtn">ACCOUNT MAKEN</button><button class="secondary mini" id="leaveBtn" title="Toegang vergeten op dit apparaat" aria-label="Toegang vergeten op dit apparaat">⇥</button></div></header>
 <p id="quizPushStatus" class="quiz-push-status" role="status" aria-live="polite"></p>
+<section id="happyHourBanner" class="happy-hour hidden" aria-labelledby="happyHourTitle"><div><span class="happy-hour-tag"><i></i>HAPPY HOUR</span><h2 id="happyHourTitle">Tot 23:00: <b>50% korting</b> op al je openstaande donuts</h2><p>Niet stapelbaar met quiz-, actie- of verjaardagskorting: de hoogste korting geldt automatisch. Om 23:00 vervalt de korting op alles wat dan nog niet betaald is.</p><span id="happyHourCountdown" class="happy-hour-timer" aria-live="off"></span></div>
+<svg class="hh-anim" viewBox="0 0 240 200" aria-hidden="true" focusable="false"><defs><clipPath id="hhClipL"><rect x="0" y="0" width="120" height="200"/></clipPath><clipPath id="hhClipR"><rect x="120" y="0" width="120" height="200"/></clipPath><g id="hhDonut"><circle cx="120" cy="134" r="58" fill="#d98b43"/><circle cx="120" cy="134" r="58" fill="none" stroke="#8a4e1d" stroke-width="5"/><path d="M68 128c4-30 30-50 52-50s50 18 54 48c-6 8-14 4-18 10s-10 12-18 6-12 4-20 2-10-10-18-6-12 8-20 2-6-10-12-12z" fill="#ff7fb2"/><circle cx="120" cy="134" r="18" fill="#1f1513" stroke="#8a4e1d" stroke-width="4"/><g stroke-width="5" stroke-linecap="round"><path d="M86 108l8-4" stroke="#fff3a6"/><path d="M104 92l3 8" stroke="#7fe0ff"/><path d="M140 96l8 3" stroke="#fff"/><path d="M152 116l4 8" stroke="#a6ff9a"/><path d="M92 128l-2 8" stroke="#7fe0ff"/><path d="M130 112l7-4" stroke="#fff3a6"/><path d="M150 138l8 1" stroke="#fff"/></g></g></defs>
+<ellipse cx="120" cy="194" rx="70" ry="5" fill="#00000055"/><g class="hh-left"><use href="#hhDonut" clip-path="url(#hhClipL)"/></g><g class="hh-right"><use href="#hhDonut" clip-path="url(#hhClipR)"/></g>
+<g class="hh-crumbs" fill="#d98b43"><circle cx="112" cy="150" r="3"/><circle cx="127" cy="160" r="2.5"/><circle cx="118" cy="172" r="2"/><circle cx="124" cy="146" r="2" fill="#ff7fb2"/></g>
+<circle class="hh-flash" cx="120" cy="96" r="22" fill="#fff6d6"/>
+<g class="hh-axe"><line x1="216" y1="182" x2="134" y2="58" stroke="#8b5a2b" stroke-width="11" stroke-linecap="round"/><line x1="216" y1="182" x2="200" y2="158" stroke="#5d3b1c" stroke-width="13" stroke-linecap="round"/><path d="M128 52l20-12 8 12-6 10z" fill="#5d3b1c"/><path d="M134 50c-10-10-26-12-36-4 4 14 6 30 2 44 14-4 28-14 36-26z" fill="#d8dde4" stroke="#8a929c" stroke-width="2"/><path d="M100 48c4 12 5 28 1 40" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></g>
+<g class="hh-stamp"><rect x="4" y="22" width="80" height="40" rx="9" fill="#ff5f9b" stroke="#fff" stroke-width="3"/><text x="44" y="51" text-anchor="middle" font-size="24" font-weight="900" fill="#1b1019" font-family="Inter,Arial,sans-serif">−50%</text></g></svg></section>
 <section class="hero"><div><p class="eyebrow">// OPERATION: ZERO KILLS</p><h1>NO KILLS.<br><span>JUST DONUTS.</span></h1><p class="muted">Een Call of Duty-potje met <strong>0 kills</strong>? Registreer zelf een donut. Iedere donut kost <strong>€ 1</strong>. Betaal meteen of laat de schuld oplopen.</p><div class="buttons"><button id="addBtn" type="button" class="donut-action"><span class="donut-cta-copy"><small>0 KILLS GESPEELD?</small><span>🍩 DONUT TOEVOEGEN</span></span><span class="donut-price">+ € 1</span></button><a class="tikkie-link" href="https://tikkie.me/pay/oa4fpbpd0nuk4ap8ec90" target="_blank" rel="noopener noreferrer">BETAAL VIA TIKKIE ↗</a></div><div class="hint">Betalen gaat via Tikkie. Je markeert zelf of je betaling is gedaan.</div></div><div class="donut" aria-hidden="true">🍩</div></section>
 <section id="quizSection" class="quiz-panel hidden" aria-label="Gezamenlijke Call of Duty-quiz"></section>
 <div class="stats">
@@ -164,7 +182,7 @@ body:has(.overlay:not(.hidden)) .mobile-donut-cta{display:none}
 <script src="./pwa.js" defer></script>
 <script src="./donut-sound.js" defer></script>
 <script type="module">
-import {calculateDebt,birthdayWeek,validBirthday,offerValid,offerUsed} from './offer-pricing.js';
+import {calculateDebt,birthdayWeek,validBirthday,offerValid,offerUsed,HAPPY_HOUR,happyHourActive} from './offer-pricing.js';
 import {installQuiz} from './quiz-ui.js';
 import {setupQuizNotifications} from './push-client.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
@@ -229,7 +247,8 @@ if(!user||!due){$('discountBreakdown').textContent='';}
 else{
 const parts=[due+' donuts × € 1,00 = '+euros(myDebt.gross)];
 if(discount)parts.push(discount+'% standaard/persoonlijke staffel');
-if(myDebt.extra)parts.push(myDebt.extra+' actie-/verjaardagsdonut'+(myDebt.extra===1?'':'s')+' met extra korting');
+if(myDebt.happyHour)parts.push(myDebt.happyHour+' donut'+(myDebt.happyHour===1?'':'s')+' met 50% Happy Hour-korting');
+if(myDebt.extra-myDebt.happyHour)parts.push((myDebt.extra-myDebt.happyHour)+' actie-/verjaardagsdonut'+(myDebt.extra-myDebt.happyHour===1?'':'s')+' met extra korting');
 if(myDebt.quizCount)parts.push(myDebt.quizCount+' quizdonut'+(myDebt.quizCount===1?'':'s')+' met 20% korting');
 parts.push('totaal korting −'+euros(myDebt.saved));
 $('discountBreakdown').textContent=parts.join(' · ');
@@ -502,6 +521,21 @@ unsubs.push(onSnapshot(collection(db,'offers'),snap=>{offers=snap.docs.map(d=>({
 // Bij afloop van een actie (of verjaardagsweek) moet de schuld ook zonder
 // Firebase-activiteit opnieuw berekend worden. Ook bij terugkeer naar de PWA.
 setInterval(()=>{if(!document.hidden)render();},30000);
+// Happy Hour: banner + aftelling per seconde. Bij het verstrijken van de
+// eindtijd verdwijnt de banner en wordt de schuld direct herberekend.
+let happyHourWasActive=happyHourActive();
+function renderHappyHour(){
+  const now=Date.now(),active=happyHourActive(now);
+  $('happyHourBanner').classList.toggle('hidden',!active);
+  if(active){
+    const left=Math.max(0,Math.floor((HAPPY_HOUR.endMs-now)/1000));
+    const h=Math.floor(left/3600),m=Math.floor(left%3600/60),sec=left%60;
+    $('happyHourCountdown').textContent='⏱ Nog '+h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  }
+  if(active!==happyHourWasActive){happyHourWasActive=active;render();}
+}
+renderHappyHour();
+const happyHourTimer=setInterval(()=>{renderHappyHour();if(Date.now()>=HAPPY_HOUR.endMs)clearInterval(happyHourTimer);},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
 render();
 </script></body></html>
