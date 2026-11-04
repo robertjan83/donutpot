@@ -6,7 +6,9 @@
 'use strict';
 const admin=require('firebase-admin');
 const MARKER='quizAdminActions/release-2026-10-22-evening-request';
+const QUIZ_PAUSED=true; // Temporarily no new quiz rounds.
 async function main(){
+ if(QUIZ_PAUSED){console.log('Quiz staat op pauze; geen vraag vrijgegeven.');return;}
  const encoded=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
  if(!encoded)throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON ontbreekt.');
  admin.initializeApp({credential:admin.credential.cert(JSON.parse(encoded))});

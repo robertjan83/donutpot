@@ -111,3 +111,10 @@ Dit is **echte Web Push** (Push API), niet een notificatie die alleen werkt zola
 - Niet stapelbaar: per donut geldt de hoogste korting (staffel, persoonlijke korting, actie, verjaardag, quizprijs of Happy Hour).
 - Om 23:00 verdwijnt de banner automatisch en vervalt de korting op alles wat dan nog niet als betaald is gemarkeerd. Al betaalde donuts houden hun vastgelegde nettobedrag.
 - Het venster staat vast in `HAPPY_HOUR` in `offer-pricing.js`; er zijn geen Firestore-wijzigingen of nieuwe rules nodig.
+
+## Quiz afgerond – Top 3 (november 2026)
+
+- Het quizblok toont na aanmelden de **top drie quizwinnaars** op basis van `quizRounds/*/winnerUid` en het totaal aan door Firebase bevestigde juiste antwoorden per speler. Namen komen uit `players`. Bij gelijke scores worden dezelfde klasseringen getoond (bijvoorbeeld 1, 1, 3); spelers die gelijk staan op de derde plaats worden allemaal getoond.
+- Nieuwe quizvragen, antwoordknoppen, activatieformulieren en Get Ready-aftellingen zijn tijdelijk uitgeschakeld. Quizpush-aanmelding wordt tijdens de pauze verborgen; bestaande pushabonnementen worden niet verwijderd. De geplande GitHub Action is uitgezet. Ook handmatig gestarte notificatie- en vrijgaveacties doen tijdens deze pauze niets.
+- Quizgeschiedenis, bestaande winnaars en **nog niet verzilverde kortingsbonnen** blijven behouden. Het bestaande `installQuiz().addDonut()`-pad blijft gewoon vouchers in een Firestore-transactie verzilveren bij een nieuwe donut. Geen nieuwe Firestore-regels nodig.
+- Een toekomstig quizseizoen kan worden herstart door de expliciete quizpauze in de betreffende modules te herzien, de workflowplanning weer aan te zetten en een nieuwe ronde te definiëren; deze update verwijdert geen quizdocumenten.

@@ -1,9 +1,7 @@
 name: DONUT OPS Quizmeldingen
 
 on:
-  schedule:
-    # Every five minutes; GitHub Actions can delay scheduled executions.
-    - cron: '*/5 * * * *'
+  # Quizseizoen afgerond. Geen automatische geplande uitvoeringen.
   workflow_dispatch:
 
 permissions:

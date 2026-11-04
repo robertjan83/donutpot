@@ -11,12 +11,14 @@ const {migrateQuizWindows}=require('./migrate-quiz-schedule.cjs');
 const PUBLIC_KEY='BA5yGMY7orlnz3M8uB329xlw383MPzmwaCGwEE3JdodR715mB5yV2eFh6PK5HlVfI6uK6tWW1EV-klLK4CWdFmw';
 const END=Date.parse('2026-11-04T00:00:00+01:00');
 const LEASE_MS=8*60*1000;
+const QUIZ_PAUSED=true; // The season has ended; do not send quiz notifications.
 
 function requireEnv(key) {
   if(!process.env[key])throw new Error('GitHub Actions secret ontbreekt: '+key);
   return process.env[key];
 }
 async function main(){
+  if(QUIZ_PAUSED){console.log('Quiz gepauzeerd: geen quiz- of Get Ready-meldingen.');return;}
   const serviceAccount=JSON.parse(requireEnv('FIREBASE_SERVICE_ACCOUNT_JSON'));
   admin.initializeApp({credential:admin.credential.cert(serviceAccount)});
   webpush.setVapidDetails('mailto:rjpeetoom@gmail.com',PUBLIC_KEY,requireEnv('WEB_PUSH_PRIVATE_KEY'));

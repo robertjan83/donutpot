@@ -6,6 +6,8 @@ import {doc,setDoc,deleteDoc,serverTimestamp} from 'https://www.gstatic.com/fire
 // Actions secret, never in this repository or in Firestore.
 const PUBLIC_VAPID='BA5yGMY7orlnz3M8uB329xlw383MPzmwaCGwEE3JdodR715mB5yV2eFh6PK5HlVfI6uK6tWW1EV-klLK4CWdFmw';
 const OPT_IN='donutops-quiz-push-optin';
+// No quiz questions while the finished season's leaderboard is displayed.
+const QUIZ_PAUSED=true;
 
 function b64urlBytes(input) {
   const padded=input.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-input.length%4)%4);
@@ -53,6 +55,11 @@ export function setupQuizNotifications(auth,db) {
   const remember=enabled=>{try{enabled?localStorage.setItem(OPT_IN,'yes'):localStorage.removeItem(OPT_IN);}catch(e){}};
   const inform=t=>{if(note)note.textContent=t;};
   function render(){
+    if(QUIZ_PAUSED){
+      btn.classList.add('hidden');
+      inform('');
+      return;
+    }
     btn.classList.toggle('hidden',!user);
     btn.disabled=busy;
     if(!user)return;
@@ -106,7 +113,7 @@ export function setupQuizNotifications(auth,db) {
     inform('Quizmeldingen uitgeschakeld op dit apparaat.');
   }
   btn.addEventListener('click',async()=>{
-    if(busy||!user)return;
+    if(QUIZ_PAUSED||busy||!user)return;
     if(!supported()||Notification.permission==='denied'){
       inform(guidance());
       return;
@@ -129,6 +136,7 @@ export function setupQuizNotifications(auth,db) {
     user=nextUser;
     inform('');
     render();
+    if(QUIZ_PAUSED)return;
     if(user&&supported()&&optedIn()&&Notification.permission==='granted'){
       try{await subscribeAndSave();}catch(e){inform('Meldingen opnieuw registreren: '+(e.message||e));}
     }else if(user&&supported()&&Notification.permission==='default'){

@@ -4,7 +4,26 @@ import {scheduleQuizRounds} from './quiz-schedule.mjs';
 import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {collection,doc,onSnapshot,getDoc,getDocs,query,where,runTransaction,writeBatch,serverTimestamp,setDoc,addDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
-const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"\'":'&#39;'}[c]));
+// November 2026 quiz season has ended. Keep all existing winnings and prize
+// redemption intact, but do not render questions or accept further attempts.
+const QUIZ_PAUSED=true;
+function leaderboard(rounds,players){
+ const totals=new Map();
+ for(const r of rounds){
+  if(typeof r.winnerUid!=='string'||!r.winnerUid.trim())continue;
+  totals.set(r.winnerUid,(totals.get(r.winnerUid)||0)+1);
+ }
+ const names=new Map(players.map(p=>[p.id,p.name||p.displayName||'Speler']));
+ const sorted=[...totals].map(([uid,wins])=>({uid,wins,name:String(names.get(uid)||'Speler')}))
+   .sort((a,b)=>b.wins-a.wins||a.name.localeCompare(b.name,'nl')||a.uid.localeCompare(b.uid));
+ let rank=0,previous=null;
+ return sorted.map((entry,index)=>{
+   if(entry.wins!==previous)rank=index+1;
+   previous=entry.wins;
+   return {...entry,rank};
+ }).filter(entry=>entry.rank<=3);
+}
 // Cryptographically random selection inside the two Europe/Amsterdam windows.
 const delayRandom=()=>{const b=new Uint32Array(1);crypto.getRandomValues(b);return b[0]/4294967296;};
 const schedule=()=>scheduleQuizRounds(25,Date.now(),delayRandom);
@@ -26,6 +45,29 @@ export function installQuiz(auth,db){
  function render(){
   if(!user){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
+  if(QUIZ_PAUSED){
+    const winners=leaderboard(rounds,players);
+    const counted=rounds.filter(r=>typeof r.winnerUid==='string'&&r.winnerUid.trim()).length;
+    const maxRounds=rounds.length||25;
+    let content='<div class="quiz-top quiz-finished-heading"><div><p class="eyebrow">// DONUT OPS HALL OF FAME</p>'+
+      '<h2>🏆 SQUAD QUIZ TOP 3</h2><p class="muted">De quiz is afgelopen. Voorlopig komen er geen nieuwe vragen.</p></div>'+
+      '<strong>🎖️ EINDSTAND</strong></div>';
+    if(winners.length){
+      content+='<div class="quiz-podium" aria-label="Top drie quizspelers">'+winners.map(item=>{
+        const medal=item.rank===1?'🥇':item.rank===2?'🥈':'🥉';
+        return '<div class="quiz-podium-row quiz-podium-rank-'+item.rank+'">'+
+          '<span class="quiz-podium-medal" aria-label="Plaats '+item.rank+'">'+medal+'</span>'+
+          '<span class="quiz-podium-player">'+safe(item.name)+'</span>'+
+          '<span class="quiz-podium-score"><b>'+item.wins+'</b> '+(item.wins===1?'goed antwoord':'goede antwoorden')+'</span></div>';
+      }).join('')+'</div>';
+      content+='<p class="quiz-foot">Gebaseerd op de officieel vastgelegde winnaars van de quizvragen. Bij een gelijke score delen spelers dezelfde plaats.</p>';
+      if(counted)content+='<p class="quiz-finished-count">'+counted+' van '+maxRounds+' vragen correct gewonnen.</p>';
+    }else content+='<p class="quiz-wait">'+(rounds.length?'Er zijn geen quizwinnaars geregistreerd.':'De eindstand wordt geladen…')+'</p>';
+    if(pending().length)content+='<p class="quiz-earned">🎟️ Je hebt nog '+pending().length+
+      (pending().length===1?' kortingsbon':' kortingsbonnen')+' van 20% voor je volgende donut'+(pending().length===1?'.':'s.')+'</p>';
+    el.innerHTML=content;
+    return;
+  }
   let s='<div class="quiz-top"><div><p class="eyebrow">// DONUT INTEL</p><h2>🎯 SQUAD QUIZ CHALLENGE</h2><p class="muted">25 vragen t/m 3 november · random 08:30–12:00 en 19:00–22:00 · één poging per speler.</p></div><strong>🏆 20% VOLGENDE DONUT</strong></div>';
   if(pending().length)s+='<p class="quiz-earned">🎟️ '+pending().length+' kortingsbon(nen) klaar voor je volgende donut(s).</p>';
   if(notice)s+='<p class="quiz-notice" role="status">'+safe(notice)+'</p>';
@@ -61,7 +103,7 @@ export function installQuiz(auth,db){
   el.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>answer(btn.dataset.answer));
  }
  async function activate(){
-  if(!admin()||busy)return;
+  if(QUIZ_PAUSED||!admin()||busy)return;
   const secret=privateKey.trim().toUpperCase();
   if(!/^[ABCD]{25}$/.test(secret)){report('Vul precies 25 letters A t/m D in.');return;}
   if(!confirm('Alle 25 vragen willekeurig tussen 08:30–12:00 en 19:00–22:00 plannen t/m 3 november voor de hele squad?'))return;
@@ -78,6 +120,7 @@ export function installQuiz(auth,db){
   }catch(e){report('Activeren mislukt: '+(e.message||e.code));}finally{busy=false;render();}
  }
  async function claim(round,answerRef){
+  if(QUIZ_PAUSED)return false;
   const stateRef=doc(db,'quizState','main'),roundRef=doc(db,'quizRounds',round.id),prizeRef=doc(db,'quizPrizes',round.id);
   try{
    const won=await runTransaction(db,async t=>{
@@ -100,7 +143,7 @@ export function installQuiz(auth,db){
   return false;
  }
  async function answer(choice){
-  if(busy||!user||!game)return;
+  if(QUIZ_PAUSED||busy||!user||!game)return;
   const r=current();if(!r||Date.now()<r.startMs||attempt?.round===r.id)return;
   busy=true;render();
   const aRef=doc(db,'quizRounds',r.id,'attempts',user.uid);
@@ -115,6 +158,7 @@ export function installQuiz(auth,db){
   }finally{busy=false;render();}
  }
  function watchAttempt(){
+  if(QUIZ_PAUSED)return;
   const r=current();
   if(!user||!r||attemptId===r.id)return;
   if(stopAttempt)stopAttempt();attemptId=r.id;attempt=null;
