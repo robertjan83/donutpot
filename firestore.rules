@@ -106,11 +106,32 @@ service cloud.firestore {
           )
           || (
             request.resource.data.owner == request.auth.uid
+            && keysOnly(['owner', 'paid', 'createdAt', 'kind'])
+            && request.resource.data.kind == 'vietnam'
+          )
+          || (
+            request.resource.data.owner == request.auth.uid
             && keysOnly(['owner', 'paid', 'createdAt', 'quizPrizeRound'])
             && request.resource.data.quizPrizeRound is string
             && get(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.owner == request.auth.uid
             && get(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.redeemedDonutId == null
             && getAfter(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.redeemedDonutId == id
+          )
+          || (
+            request.resource.data.owner == request.auth.uid
+            && keysOnly(['owner', 'paid', 'createdAt', 'quizPrizeRound', 'kind'])
+            && request.resource.data.kind == 'vietnam'
+            && request.resource.data.quizPrizeRound is string
+            && get(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.owner == request.auth.uid
+            && get(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.redeemedDonutId == null
+            && getAfter(/databases/$(database)/documents/quizPrizes/$(request.resource.data.quizPrizeRound)).data.redeemedDonutId == id
+          )
+          || (
+            isAdmin()
+            && keysOnly(['owner', 'paid', 'createdAt', 'addedBy', 'kind'])
+            && request.resource.data.kind == 'vietnam'
+            && request.resource.data.addedBy == request.auth.uid
+            && exists(/databases/$(database)/documents/players/$(request.resource.data.owner))
           )
           || (
             isAdmin()
@@ -134,7 +155,10 @@ service cloud.firestore {
           && request.resource.data.paidDiscountPct is int
           && request.resource.data.paidDiscountPct >= 0
           && request.resource.data.paidDiscountPct <= 100
-          && request.resource.data.paidCents == 100 - request.resource.data.paidDiscountPct
+          && request.resource.data.paidCents == math.round(
+            (resource.data.get('kind','normal') == 'vietnam' ? 50 : 100)
+              * (100 - request.resource.data.paidDiscountPct) / 100
+          )
           && request.resource.data.paidAt == request.time
         ) || (
           isAdmin()

@@ -186,15 +186,17 @@ export function installQuiz(auth,db){
  });
  setInterval(()=>{if(user&&!document.hidden)render();},15000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
- async function addDonut(owner){
+ async function addDonut(owner,kind='normal'){
+  if(kind!=='normal'&&kind!=='vietnam')throw Error('Onbekend donuttype.');
+  const fields={owner,paid:false,createdAt:serverTimestamp(),...(kind==='vietnam'?{kind:'vietnam'}:{})};
   const s=await getDocs(query(collection(db,'quizPrizes'),where('owner','==',owner)));
   const todo=s.docs.filter(d=>d.data().redeemedDonutId===null).sort((a,b)=>(a.data().awardedAt?.seconds||0)-(b.data().awardedAt?.seconds||0));
-  if(!todo.length)return addDoc(collection(db,'donuts'),{owner,paid:false,createdAt:serverTimestamp()});
+  if(!todo.length)return addDoc(collection(db,'donuts'),fields);
   const prizeRef=todo[0].ref,donutRef=doc(collection(db,'donuts'));
   await runTransaction(db,async t=>{
    const prize=await t.get(prizeRef);
    if(!prize.exists()||prize.data().owner!==owner||prize.data().redeemedDonutId!==null)throw Error('De kortingsbon is inmiddels al gebruikt. Probeer opnieuw.');
-   t.set(donutRef,{owner,paid:false,createdAt:serverTimestamp(),quizPrizeRound:prizeRef.id});
+   t.set(donutRef,{...fields,quizPrizeRound:prizeRef.id});
    t.update(prizeRef,{redeemedDonutId:donutRef.id,redeemedAt:serverTimestamp()});
   });
   return donutRef;

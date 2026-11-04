@@ -1,6 +1,10 @@
 const zone='Europe/Amsterdam';
 const fmt=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'});
 export const stampMs=item=>item.createdAt?.toMillis?.()??(item.createdAt?.seconds?item.createdAt.seconds*1000:0);
+// An ordinary donut is €1. A 🇻🇳 Vietnam donut (User884 hosting from
+// Vietnam, entered by the player) has a €0.50 BASE price.
+// Old donut documents with no kind remain ordinary €1 donuts.
+export const donutBaseCents=entry=>entry.kind==='vietnam'?50:100;
 export function validBirthday(month,day){
  if(!Number.isInteger(month)||month<1||month>12||!Number.isInteger(day))return false;
  const dt=new Date(Date.UTC(2000,month-1,day));
@@ -60,16 +64,20 @@ export function promotionRates(entries,players,offers,nowMs=Date.now()){
 export function calculateDebt(entries,players,offers,owner,basePercent,nowMs=Date.now()){
  const outstanding=entries.filter(e=>e.owner===owner&&!e.paid);
  const rates=promotionRates(entries,players,offers,nowMs);
- let cents=0,extra=0,birthdays=0,actions=0,happyHour=0,quizCount=0;
+ let cents=0,gross=0,extra=0,birthdays=0,actions=0,happyHour=0,quizCount=0;
  const lineItems=[];
  for(const d of outstanding){
   const promo=rates.get(d.id);
   const pct=Math.max(basePercent,promo?.percent??0,d.quizPrizeRound?20:0);
-  const lineCents=100-pct;
+  const baseCents=donutBaseCents(d);
+  // Highest eligible discount wins, applied to this donut's own base price.
+  // Round HALF-UP to whole cents, consistently with Firestore math.round.
+  const lineCents=Math.round(baseCents*(100-pct)/100);
+  gross+=baseCents;
   cents+=lineCents;
-  lineItems.push({id:d.id,cents:lineCents,discountPct:pct});
+  lineItems.push({id:d.id,cents:lineCents,baseCents,discountPct:pct});
   if(d.quizPrizeRound&&pct===20&&20>basePercent&&20>(promo?.percent??0))quizCount++;
   if(promo&&promo.percent>basePercent){extra++;if(promo.kind==='verjaardag')birthdays++;else if(promo.kind==='happyhour')happyHour++;else actions++;}
  }
- return {count:outstanding.length,cents,gross:outstanding.length*100,saved:outstanding.length*100-cents,extra,birthdays,actions,happyHour,quizCount,lineItems};
+ return {count:outstanding.length,cents,gross,saved:gross-cents,extra,birthdays,actions,happyHour,quizCount,lineItems};
 }
